@@ -1,0 +1,35 @@
+name: 功能建议
+description: 描述高校科研工作中的真实问题，而不只是一个按钮
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 真实科研问题
+      description: 哪类科研工作者在什么任务中被什么阻塞？现在需要花多少时间？
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: 当前替代做法
+      description: 目前如何解决，为什么不够好？
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 希望达到的结果
+      description: 请描述可验证的结果，不必先规定具体实现。
+    validations:
+      required: true
+  - type: dropdown
+    id: discipline
+    attributes:
+      label: 主要学科
+      options: [理工, 生物医学, 农林, 人文社科, 经管法, 艺术体育, 跨学科, 科研管理]
+  - type: textarea
+    id: risks
+    attributes:
+      label: 数据、版权、伦理或误用风险

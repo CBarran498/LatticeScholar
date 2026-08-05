@@ -1,0 +1,51 @@
+# LatticeScholar v0.9.0 public source allowlist
+#
+# The release archive is assembled from this allowlist. A path not listed here
+# must not be copied into the public source package without a new review.
+
+.env.example
+.env.production.example
+.github/
+.gitignore
+CHANGELOG.md
+CITATION.cff
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+Caddyfile
+Dockerfile
+LICENSE
+Makefile
+NOTICE
+OPEN_SOURCE_MANIFEST.txt
+README.md
+README_EN.md
+SECURITY.md
+THIRD_PARTY_NOTICES.md
+compose.production.yaml
+compose.yaml
+docs/
+启动 LatticeScholar.command
+pyproject.toml
+scripts/
+src/
+tests/
+
+# Explicit exclusions
+.git/
+.env
+.venv/
+.data/
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+release/
+promotion-kit/

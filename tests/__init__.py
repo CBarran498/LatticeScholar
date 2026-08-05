@@ -1,0 +1,1 @@
+"""LatticeScholar automated tests."""

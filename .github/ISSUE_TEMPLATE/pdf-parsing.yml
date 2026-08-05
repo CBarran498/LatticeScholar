@@ -1,0 +1,55 @@
+name: PDF 解析问题
+description: 报告多栏、乱码、页序、扫描 OCR 或中文分析异常
+title: "[PDF] "
+labels: ["bug", "pdf", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢帮助改进论文解剖。请不要上传无权公开的付费论文、敏感材料或含个人信息的文件。优先提供可公开链接、合成最小样例或脱敏页面。
+  - type: dropdown
+    id: pdf_kind
+    attributes:
+      label: PDF 类型
+      options:
+        - 文字型单栏
+        - 文字型多栏
+        - 扫描/图片型
+        - 含复杂公式或表格
+        - 不确定
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: LatticeScholar 版本
+      placeholder: 例如 0.5.0
+    validations:
+      required: true
+  - type: textarea
+    id: document_health
+    attributes:
+      label: 页面显示的文档健康信息
+      description: 请复制解析方法、质量分、页数、原文语言、OCR 状态和正文结构。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+      description: 哪一页、哪一栏或哪段文字应该怎样出现？
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果与最小复现步骤
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我确认没有粘贴密级信息、个人敏感信息或无权公开的全文内容。
+          required: true

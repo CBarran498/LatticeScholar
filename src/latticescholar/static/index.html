@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LatticeScholar — 开源、证据驱动的科研智能工作台">
+  <title>LatticeScholar · 开源科研智能工作台</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><strong>LatticeScholar</strong><span>把科研过程留得下来</span></div>
+      </div>
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-item active" data-page="overview"><span>⌂</span> 总览</button>
+        <button class="nav-item" data-page="projects"><span>▦</span> 科研项目</button>
+        <button class="nav-item" data-page="explore"><span>⌕</span> 文献雷达</button>
+        <button class="nav-item" data-page="analyze"><span>◎</span> 论文深度解剖</button>
+        <button class="nav-item" data-page="journals"><span>◇</span> 期刊匹配</button>
+        <button class="nav-item" data-page="policies"><span>▤</span> 政策雷达</button>
+        <button class="nav-item" data-page="ideas"><span>✦</span> Idea Lab</button>
+        <button class="nav-item" data-page="discuss"><span>◫</span> 科研研讨室</button>
+        <button class="nav-item" data-page="library"><span>▣</span> 我的证据库</button>
+        <button class="nav-item" data-page="students"><span>✓</span> 科研任务台</button>
+        <button class="nav-item" data-page="models"><span>⌁</span> 模型控制台</button>
+        <button class="nav-item" data-page="guide"><span>?</span> 使用指南</button>
+        <button class="nav-item" data-page="account"><span>◉</span> 账户与套餐</button>
+        <button class="nav-item hidden" id="admin-nav" data-page="admin"><span>⚙</span> 系统管理</button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="status-dot"></span>
+        <div><strong id="runtime-status">正在连接本地服务</strong><small id="llm-status">检测模型配置…</small></div>
+      </div>
+      <p class="version" id="version-label">v0.9.0 · Open Core</p>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="page-eyebrow">科研工作台</p>
+          <h1 id="page-title">从一个问题开始，把研究过程完整留下</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="privacy-pill project-pill" id="active-project-pill" data-go="projects" title="切换当前科研项目"><span>▦</span><b id="active-project-label">未选择科研项目</b></button>
+          <button class="privacy-pill plan-pill" id="plan-pill" data-go="account" title="查看当前套餐、额度和开源社区版说明"><span>◉</span> <b id="plan-pill-label">正在识别套餐</b></button>
+        </div>
+      </header>
+
+      <section class="page active" id="page-overview">
+        <div class="hero panel-dark">
+          <div class="hero-copy">
+            <span class="hero-kicker">检索 · 精读 · 选刊 · 研究设计</span>
+            <h2><span>把分散的科研信息，</span><span>变成<strong>可验证的研究路径</strong></span></h2>
+            <p>围绕一个课题，统一保存中英文检索式、论文原文证据、阅读结论、政策背景和下一步任务。系统不会替你宣称“创新”，只帮助你更快找到值得验证的问题。</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" data-go="projects">建立第一个课题 <span>→</span></button>
+              <button class="btn btn-ghost" data-go="guide">先看 3 分钟指南</button>
+            </div>
+          </div>
+          <div class="research-engine" aria-hidden="true">
+            <div class="engine-halo halo-one"></div><div class="engine-halo halo-two"></div><div class="engine-grid"></div>
+            <div class="engine-core"><small>EVIDENCE CORE</small><strong>研究问题</strong><span>可追溯 · 可复查</span></div>
+            <div class="engine-node node-paper"><i></i><span>文献</span><small>LITERATURE</small></div>
+            <div class="engine-node node-proof"><i></i><span>证据</span><small>EVIDENCE</small></div>
+            <div class="engine-node node-method"><i></i><span>方法</span><small>METHOD</small></div>
+            <div class="engine-node node-policy"><i></i><span>政策</span><small>POLICY</small></div>
+            <div class="engine-node node-action"><i></i><span>行动</span><small>ACTION</small></div>
+            <span class="engine-status"><i></i> RESEARCH PATH ONLINE</span>
+          </div>
+        </div>
+
+        <section class="advantage-panel panel">
+          <div class="advantage-copy"><span class="eyebrow">为什么不只用检索网站或通用 AI</span><h2>工具负责找，LatticeScholar 负责把过程连起来</h2><p>核心价值不是多一个聊天框，而是让每次检索、阅读和判断都回到同一个研究问题，并保留可复查的来源。</p></div>
+          <div class="comparison-table" role="table" aria-label="科研工具能力对比">
+            <div class="comparison-row head" role="row"><span>能力</span><span>检索网站</span><span>通用 AI</span><strong>LatticeScholar</strong></div>
+            <div class="comparison-row" role="row"><span>跨来源检索与去重</span><span>部分</span><span>不稳定</span><strong>统一完成</strong></div>
+            <div class="comparison-row" role="row"><span>结论回到页码与原文</span><span>需手工</span><span>容易丢失</span><strong>强制保留</strong></div>
+            <div class="comparison-row" role="row"><span>课题上下文持续沉淀</span><span>较弱</span><span>依赖对话</span><strong>项目化保存</strong></div>
+            <div class="comparison-row" role="row"><span>检索式与决策可复现</span><span>需手工</span><span>较弱</span><strong>自动记录</strong></div>
+          </div>
+        </section>
+
+        <div class="metric-grid">
+          <article class="metric-card"><span class="metric-icon violet">⌕</span><div class="metric-value"><strong>8</strong><p>学术检索路径</p></div><small>官方 API · 授权接口 · 题录导入</small></article>
+          <article class="metric-card"><span class="metric-icon mint">↯</span><div class="metric-value"><strong>24h</strong><p>默认检索缓存</p></div><small>减少等待 · 降低接口消耗</small></article>
+          <article class="metric-card"><span class="metric-icon amber">⊙</span><div class="metric-value"><strong id="policy-count">—</strong><p>官方政策证据</p></div><small>日期 · 发布方 · 原文链接</small></article>
+          <article class="metric-card plan-metric"><span class="metric-icon blue">◉</span><div class="metric-value"><strong id="overview-plan">—</strong><p>当前使用权益</p></div><small id="overview-plan-note">正在加载账户状态</small></article>
+        </div>
+
+        <div class="section-heading"><div><span>WORKFLOWS</span><h2>八条科研工作流，一套统一证据</h2></div><p>先建立长期课题容器，再把检索、判断、创意、讨论与证据沉淀到可复现的研究路径中。</p></div>
+        <div class="workflow-grid">
+          <button class="workflow-card" data-go="projects"><b>01</b><span class="workflow-symbol">▦</span><h3>建课题</h3><p>围绕研究问题建立项目，统一管理检索历史与证据资产。</p><em>Frame project →</em></button>
+          <button class="workflow-card" data-go="explore"><b>02</b><span class="workflow-symbol">⌕</span><h3>找论文</h3><p>多源聚合、可解释排序、版本与开放获取提示。</p><em>Explore evidence →</em></button>
+          <button class="workflow-card" data-go="analyze"><b>03</b><span class="workflow-symbol">◎</span><h3>读核心</h3><p>抽取问题、方法、创新声明、结论与局限，附原文证据。</p><em>Dissect paper →</em></button>
+          <button class="workflow-card" data-go="journals"><b>04</b><span class="workflow-symbol">◇</span><h3>选期刊</h3><p>用真实相关论文反推 scope 匹配，不伪造录用概率。</p><em>Match journals →</em></button>
+          <button class="workflow-card" data-go="policies"><b>05</b><span class="workflow-symbol">▤</span><h3>看战略</h3><p>跟踪官方政策信号，区分政策原文与人工审核。</p><em>Scan policies →</em></button>
+          <button class="workflow-card" data-go="ideas"><b>06</b><span class="workflow-symbol">✦</span><h3>生 Idea</h3><p>能力 × 前沿缺口 × 战略信号，输出可证伪假设。</p><em>Forge hypotheses →</em></button>
+          <button class="workflow-card" data-go="discuss"><b>07</b><span class="workflow-symbol">◫</span><h3>做研讨</h3><p>围绕当前课题证据形成结论、不确定性和本周行动。</p><em>Discuss with evidence →</em></button>
+          <button class="workflow-card" data-go="library"><b>08</b><span class="workflow-symbol">▣</span><h3>沉淀证据</h3><p>论文、政策、分析、Idea 与研讨全部保存并可导出。</p><em>Build memory →</em></button>
+        </div>
+
+        <div class="principles panel">
+          <div><span class="eyebrow">TRUST BY DESIGN</span><h2>科研助手首先要诚实</h2></div>
+          <ul>
+            <li><span>01</span><div><strong>不把引用量当质量</strong><small>它只是来源覆盖不同的一个信号。</small></div></li>
+            <li><span>02</span><div><strong>不把期刊匹配当录用概率</strong><small>推荐依据和缺失信息全部明示。</small></div></li>
+            <li><span>03</span><div><strong>不把生成内容当事实</strong><small>创新、新颖性和政策适用性必须人工核验。</small></div></li>
+            <li><span>04</span><div><strong>不做黑盒，全程可追溯</strong><small>每一条结论都能回到原文，每一条建议都标明局限。</small></div></li>
+          </ul>
+        </div>
+
+        <div class="panel" style="margin-top:28px;padding:32px">
+          <div class="connector-head"><div><span class="eyebrow">QUICK START</span><h3>新手快速上路</h3><p>四步开始你的证据驱动科研之旅；不配置模型也能使用基础工作流。</p></div></div>
+          <div class="connector-grid" style="margin-top:18px">
+            <button class="connector-card" data-go="projects" style="cursor:pointer;text-align:left"><div class="connector-top"><h4>① 建立科研项目</h4><span class="mode-badge">2 分钟</span></div><p>围绕一个可回答的研究问题建项目，统一管理后续检索与分析。</p></button>
+            <button class="connector-card" data-go="explore" style="cursor:pointer;text-align:left"><div class="connector-top"><h4>② 多源文献检索</h4><span class="mode-badge">30 秒</span></div><p>一次查询跨越 Crossref、Semantic Scholar、arXiv、PubMed 等平台。</p></button>
+            <button class="connector-card" data-go="analyze" style="cursor:pointer;text-align:left"><div class="connector-top"><h4>③ 论文深度解剖</h4><span class="mode-badge">1 分钟</span></div><p>粘贴摘要或上传 PDF，自动提取痛点、方法、创新、实验和局限。</p></button>
+            <button class="connector-card" data-go="ideas" style="cursor:pointer;text-align:left"><div class="connector-top"><h4>④ 生成研究假设</h4><span class="mode-badge">2 分钟</span></div><p>输入你的已有工作，结合文献和政策信号，输出可证伪的科研方向。</p></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-projects">
+        <div class="page-intro"><div><span class="step-no">01</span><div><h2>科研项目工作区</h2><p>用一个明确的研究问题串起长期检索、证据沉淀与后续决策。</p></div></div><span class="local-badge">可复现研究路径</span></div>
+        <div class="project-layout">
+          <form id="project-form" class="panel form-panel sticky-panel">
+            <div><span class="eyebrow">START WITH A QUESTION</span><h3>建立科研项目</h3><p>建议按一个可回答的研究问题建项目，而不是按宽泛学科建文件夹。</p></div>
+            <label class="field"><span>项目名称</span><input id="project-name" required maxlength="120" placeholder="例如：低资源医学多模态决策"></label>
+            <label class="field"><span>核心研究问题</span><textarea id="project-question" rows="5" required maxlength="1000" placeholder="在什么对象、场景与约束下，想验证什么关系或改进？"></textarea></label>
+            <label class="field"><span>边界、资源与备注（可选）</span><textarea id="project-description" rows="5" maxlength="4000" placeholder="已有数据、设备、方法能力、时间范围、排除方向……"></textarea></label>
+            <button class="btn btn-primary full" type="submit">创建并设为当前项目</button>
+          </form>
+          <div class="project-workspace">
+            <section class="panel project-list-panel"><div class="grant-head"><div><span class="eyebrow">RESEARCH PORTFOLIO</span><h3>我的科研项目</h3></div><strong id="project-count">0</strong></div><div id="project-list" class="project-list empty-state"><span>▦</span><h3>还没有科研项目</h3><p>先建立一个项目，后续检索和收藏会自动归档。</p></div></section>
+            <section id="project-detail" class="panel project-detail empty-state"><span>◎</span><h3>选择一个项目</h3><p>这里会展示项目问题、检索轨迹与已归档证据。</p></section>
+            <div class="project-trace-grid">
+              <section class="panel trace-panel"><div class="trace-head"><div><span class="eyebrow">SEARCH LOG</span><h3>可复现检索记录</h3></div><span id="project-history-count">0 次</span></div><div id="project-history" class="compact-list empty-state"><span>⌕</span><p>当前项目还没有检索记录。</p></div></section>
+              <section class="panel trace-panel"><div class="trace-head"><div><span class="eyebrow">EVIDENCE</span><h3>项目证据</h3></div><span id="project-evidence-count">0 条</span></div><div id="project-evidence" class="compact-list empty-state"><span>▣</span><p>当前项目还没有归档证据。</p></div></section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-explore">
+        <div class="page-intro"><div><span class="step-no">02</span><div><h2>文献雷达</h2><p>中文主题与英文检索式分开填写，结果按语言和资料完整度清楚分层。</p></div></div><button class="help-trigger" type="button" data-go="guide">不会配置？查看检索指南</button></div>
+        <form id="search-form" class="search-console panel">
+          <div class="search-query-grid">
+            <label class="field"><span>中文研究主题</span><textarea id="search-query" rows="3" required placeholder="例如：低算力条件下的临床多模态决策支持"></textarea><small>用于中文题录来源，也作为本轮研究问题记录。</small></label>
+            <label class="field"><span>英文检索式（推荐）</span><textarea id="search-query-en" rows="3" placeholder="resource-efficient multimodal clinical decision support"></textarea><small>用于 Semantic Scholar、OpenAlex、arXiv、PubMed 和 Web of Science。</small></label>
+          </div>
+          <div class="search-ai-row"><label class="field grow"><span>领域提示（可选）</span><input id="search-field-hint" maxlength="200" placeholder="例如：临床医学 × 机器学习"></label><button id="generate-search-strategy" class="btn btn-secondary" type="button"><span>✦</span> 生成双语检索式</button><small>模型只负责拆解概念和生成检索式；真实论文仍由所选数据库返回。</small></div>
+          <div id="search-strategy-result" class="strategy-result hidden" aria-live="polite"></div>
+          <div class="search-primary-row"><label class="field grow"><span>归属科研项目</span><select id="search-project"><option value="">不归入项目</option></select></label><label class="field mini"><span>结果数</span><select id="search-limit"><option>10</option><option selected>20</option><option>30</option><option>50</option></select></label><button class="btn btn-primary search-btn" type="submit">开始检索 <span>→</span></button></div>
+          <div class="form-row compact">
+            <div class="field"><span>数据源</span><div class="check-group">
+              <label><input type="checkbox" name="source" value="crossref" checked> Crossref</label>
+              <label><input type="checkbox" name="source" value="semantic_scholar" checked> Semantic Scholar</label>
+              <label><input type="checkbox" name="source" value="arxiv" checked> arXiv</label>
+              <label><input type="checkbox" name="source" value="openalex"> OpenAlex*</label>
+              <label><input type="checkbox" name="source" value="pubmed" checked> PubMed</label>
+              <label><input type="checkbox" name="source" value="web_of_science" id="source-wos"> Web of Science*</label>
+            </div></div>
+          </div>
+          <details class="advanced-search">
+            <summary><span>高级筛选</span><small>年份、语言、摘要、开放获取、引用与排序</small></summary>
+            <div class="advanced-grid">
+              <label class="field"><span>起始年份</span><input id="year-from" type="number" min="1900" max="2100" placeholder="2020"></label>
+              <label class="field"><span>截止年份</span><input id="year-to" type="number" min="1900" max="2100" placeholder="2026"></label>
+              <label class="field"><span>文献语言</span><select id="search-language"><option value="any">中文与英文</option><option value="zh">中文</option><option value="en">English</option></select></label>
+              <label class="field"><span>摘要状态</span><select id="search-abstract"><option value="any">不限</option><option value="yes">只看有摘要</option><option value="no">只看题录</option></select></label>
+              <label class="field"><span>最低引用信号</span><input id="min-citations" type="number" min="0" max="1000000" value="0"></label>
+              <label class="field"><span>结果排序</span><select id="search-sort"><option value="relevance">综合相关性</option><option value="completeness">资料完整度</option><option value="newest">最新发表</option><option value="citations">引用信号</option></select></label>
+              <label class="toggle-row advanced-toggle"><input id="open-access-only" type="checkbox"><span>只看开放获取论文</span></label>
+            </div>
+          </details>
+          <small class="form-note">OpenAlex 和 Web of Science 可能需要 Key；知网与 Google Scholar 通过原站检索后合规导入题录。平台不会绕过登录、订阅或反爬规则。</small>
+        </form>
+        <aside class="module-guide"><span>检索建议</span><p>先用中文写清研究问题，再补充英文领域术语。只有题录不等于论文无摘要，而是当前元数据源没有返回；可切换 OpenAlex、PubMed 或导入全文继续。</p></aside>
+        <section class="connector-hub panel" aria-labelledby="connector-title">
+          <div class="connector-head"><div><span class="eyebrow">SOURCE ACCESS LAYER</span><h3 id="connector-title">主流平台合规接入中心</h3><p>官方接口直接查；受限平台在原站完成检索，再导入题录。导入后同样可以做论文解剖、期刊匹配、Idea Lab 和证据沉淀。</p></div><span id="connector-ready" class="connector-count">检测中</span></div>
+          <div id="connector-grid" class="connector-grid"></div>
+          <form id="import-form" class="import-strip">
+            <label class="field grow"><span>题录来源</span><select id="import-source"><option>中国知网</option><option>Google Scholar</option><option>Web of Science</option><option>PubMed</option><option>其他题录平台</option></select></label>
+            <label class="file-picker" for="bibliography-file"><span>⇧</span><div><strong>导入题录文件</strong><small>BibTeX / RIS / EndNote / NBIB · 最大 5 MB</small></div><input id="bibliography-file" type="file" accept=".bib,.ris,.enw,.nbib,.txt" required></label>
+            <button class="btn btn-secondary" type="submit">导入统一证据层</button>
+          </form>
+        </section>
+        <div id="search-summary" class="result-summary hidden"></div>
+        <div id="search-tools" class="search-tools panel hidden"><div id="paper-tabs" class="result-tabs"><button class="active" data-paper-filter="all">全部 <b id="facet-all">0</b></button><button data-paper-filter="zh">中文 <b id="facet-zh">0</b></button><button data-paper-filter="en">English <b id="facet-en">0</b></button><button data-paper-filter="mixed">中英混合 <b id="facet-mixed">0</b></button><button data-paper-filter="abstract">有摘要 <b id="facet-abstract">0</b></button></div><div><button id="export-bibtex" class="btn btn-secondary" type="button">导出 BibTeX</button><button id="export-ris" class="btn btn-secondary" type="button">导出 RIS</button></div></div>
+        <div id="search-results" class="result-list empty-state"><span>⌕</span><h3>等待你的研究问题</h3><p>建议用“对象 + 方法 + 场景/约束”描述，而不是只输入一个宽泛学科名。</p></div>
+      </section>
+
+      <section class="page" id="page-analyze">
+        <div class="page-intro"><div><span class="step-no">03</span><div><h2>论文深度解剖</h2><p>先检查 PDF 文字与版面质量，再用中文回答研究问题，并把证据定位到原页。</p></div></div><button class="help-trigger" type="button" data-go="guide">查看 PDF 解析说明</button></div>
+        <aside class="module-guide critical"><span>能力说明</span><p>多栏、表格和扫描页会自动选择解析策略。完整中文语义解读需要配置本地或获准的模型；未配置时使用中文快速定位模式，原文证据保留原语言，避免把机器翻译冒充原文。</p></aside>
+        <div class="two-column analysis-layout" id="analysis-layout">
+          <form id="analyze-form" class="panel form-panel">
+            <div class="mode-switch"><button type="button" class="active" data-analyze-mode="text">粘贴文本</button><button type="button" data-analyze-mode="pdf">上传 PDF</button></div>
+            <div id="analyze-text-fields">
+              <label class="field"><span>论文标题（可选）</span><input id="analyze-title" placeholder="Paper title"></label>
+              <label class="field"><span>摘要 / 待分析文本</span><textarea id="analyze-abstract" rows="13" placeholder="粘贴摘要。规则模式最适合摘要；深度模式可处理更长文本。"></textarea></label>
+            </div>
+            <div id="analyze-pdf-fields" class="hidden">
+              <label class="upload-zone" id="pdf-upload-zone" for="pdf-file"><span>⇧</span><strong id="pdf-upload-title">选择本地 PDF</strong><small id="pdf-upload-note">最多 15 MB · Markdown 版面解析 · 多栏识别 · 扫描页按需 OCR · 文件不落盘</small><input id="pdf-file" type="file" accept="application/pdf"></label>
+              <div id="pdf-file-status" class="pdf-file-status hidden" aria-live="polite"></div>
+            </div>
+            <label class="field"><span>你最关心的问题（可选）</span><input id="analysis-question" placeholder="例如：它相对既有方法的真正增量是什么？"></label>
+            <div class="question-presets" aria-label="快速选择关注问题"><button type="button" data-analysis-focus="领域现存痛点与研究缺口是什么？">研究痛点</button><button type="button" data-analysis-focus="相对经典工作有哪些可验证的创新增量？">创新增量</button><button type="button" data-analysis-focus="实验设计是否充分支撑核心结论？">实验充分性</button><button type="button" data-analysis-focus="哪些细节必须回到原文、图表或补充材料核验？">深挖清单</button></div>
+            <label class="toggle-row"><input id="analysis-use-llm" type="checkbox" checked><span>配置模型时启用深度分析；失败自动回退到规则抽取</span></label>
+            <div class="analysis-promise"><strong>固定中文输出</strong><p>解释、判断与提醒均使用简体中文；原文证据保持原语言并标注页码，避免翻译失真。</p></div>
+            <button class="btn btn-primary full" type="submit">生成四问中文回答</button>
+          </form>
+          <div id="analysis-result" class="panel result-panel empty-state"><span>◎</span><h3>上传论文，直接回答四个问题</h3><p>结果只展示中文结论和分条要点；原文依据按需展开。</p></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-journals">
+        <div class="page-intro"><div><span class="step-no">04</span><div><h2>期刊匹配</h2><p>聚合开放源、PubMed、已授权 Web of Science 及已导入题录中的真实论文样本。</p></div></div><span class="local-badge warning">不是录用率预测</span></div>
+        <form id="journal-form" class="panel horizontal-form">
+          <label class="field"><span>拟投稿标题</span><input id="journal-title" required placeholder="输入稿件标题"></label>
+          <label class="field grow"><span>摘要 / 研究范围</span><textarea id="journal-abstract" rows="4" placeholder="摘要越具体，scope 匹配越有参考价值"></textarea></label>
+          <button class="btn btn-primary" type="submit">匹配候选期刊 <span>→</span></button>
+        </form>
+        <div class="caution-strip"><strong>投稿安全线</strong><span>必须到期刊官网核验 scope、文章类型、APC、审稿规则、收录状态与撤稿/更正记录。LatticeScholar 不展示无法合法获得或核验的“影响因子”。</span></div>
+        <div id="journal-results" class="result-list empty-state"><span>◇</span><h3>等待稿件信息</h3><p>推荐分数只代表当前样本中的主题匹配证据，不代表期刊质量或录用概率。</p></div>
+      </section>
+
+      <section class="page" id="page-policies">
+        <div class="page-intro"><div><span class="step-no">05</span><div><h2>政策雷达</h2><p>把战略信号当作研究语境，而不是生硬贴标签；每条记录都链接官方原文。</p></div></div><span class="local-badge">官方来源 · 审核后发布</span></div>
+        <div class="policy-search panel"><label class="field grow"><span>按研究方向检索</span><input id="policy-query" placeholder="例如：脑机接口、AI for Science、科技伦理"></label><button id="policy-search-btn" class="btn btn-primary">筛选政策</button><button id="policy-reset-btn" class="btn btn-secondary">显示全部</button></div>
+        <div id="policy-results" class="policy-grid"></div>
+        <section class="policy-source-section panel"><div class="connector-head"><div><span class="eyebrow">ALL-SECTOR COVERAGE</span><h3>全行业官方政策源目录</h3><p>从综合战略到医药、农业、能源、金融、文化、体育、航天等领域，按主管部门持续核验。</p></div><strong id="policy-source-count">—</strong></div><div id="policy-source-grid" class="policy-source-grid"></div></section>
+        <div class="source-note"><strong>时效说明</strong><p>系统可定时发现官方站点中的新增或变化条目，但不会未经审核自动发布。使用前仍请点击原文检查现行有效性、适用地域、申报主体和配套细则。</p></div>
+      </section>
+
+      <section class="page" id="page-ideas">
+        <div class="page-intro"><div><span class="step-no">06</span><div><h2>Idea Lab</h2><p>用“已有能力 × 文献边界 × 政策信号”形成可证伪的研究假设与首轮验证。</p></div></div><span class="local-badge violet-badge">Evidence Triad</span></div>
+        <div class="idea-layout">
+          <form id="idea-form" class="panel form-panel sticky-panel">
+            <div class="idea-input-intro"><span class="eyebrow">YOUR RESEARCH FOUNDATION</span><h3>导入已有工作</h3><p>上传材料或手动补充，系统会合并成一份研究能力上下文。</p></div>
+            <label class="field"><span>手动补充（可选）</span><textarea id="existing-work" rows="6" maxlength="30000" placeholder="例如：我已有的研究对象、数据、方法、经过验证的结果，以及实际可调用的资源。"></textarea><small>适合补充文件中没有写明的边界、失败经验与现实约束。</small></label>
+            <section class="work-import" id="work-import">
+              <input id="idea-work-files" type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.odt,.txt,.md,.rtf,.html,.htm,.csv,.json,.bib,.ris,.nbib,.tex,.ipynb" hidden>
+              <div class="work-dropzone" id="work-dropzone" tabindex="0" role="button" aria-label="选择或拖放已有工作文件">
+                <span class="upload-symbol">↑</span>
+                <div><strong>上传已有工作</strong><p>拖放文件到这里，或 <button id="choose-work-files" type="button">选择文件</button></p><small>PDF、Office、ODT、Markdown、LaTeX、Jupyter、BibTeX、RIS 等 · 最多 5 个 · 单个 12 MB</small></div>
+              </div>
+              <div id="idea-document-list" class="idea-document-list" aria-live="polite"></div>
+              <div class="import-privacy"><span>◇</span><p><strong>本地解析边界</strong>文件先在当前服务中提取文字；只有生成 Idea 时，合并后的必要文本才会按你的路由设置发送给模型。</p></div>
+            </section>
+            <label class="field"><span>希望前进的方向（可选）</span><textarea id="research-goal" rows="4" placeholder="你想解决什么更大的问题？有哪些现实约束？"></textarea></label>
+            <label class="field"><span>关键词（逗号分隔）</span><input id="idea-keywords" placeholder="轻量化, 可信AI, 临床决策"></label>
+            <div class="context-box"><span>已选证据</span><p><b id="selected-paper-count">0</b> 篇论文 · <b id="selected-policy-count">0</b> 条政策</p><small>在“文献雷达”和“政策雷达”中点击“加入 Idea Lab”。</small></div>
+            <label class="toggle-row"><input id="idea-use-llm" type="checkbox" checked><span>配置模型时进行跨证据推理；否则输出结构化假设模板</span></label>
+            <button class="btn btn-primary full" type="submit">生成 3 个可验证方向 <span>✦</span></button>
+          </form>
+          <div id="idea-results" class="idea-results empty-state"><span>✦</span><h3>创新不是一句“首次”</h3><p>高质量 Idea 应同时说明：为什么值得做、与什么证据相连、可能失败在哪里、第一周如何验证。</p></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-discuss">
+        <div class="page-intro"><div><span class="step-no">07</span><div><h2>科研研讨室</h2><p>围绕当前课题和已归档证据讨论，不从零开始泛泛聊天。</p></div></div><span class="local-badge violet-badge">智能路由 · 证据约束</span></div>
+        <section class="discussion-hero panel-dark">
+          <div><span class="hero-kicker">PROJECT-GROUNDED DISCUSSION</span><h2>把问题带进组会，<br>把结论带回<strong>项目证据</strong></h2><p>模型只能引用当前项目证据库中的编号；证据不足、尚待验证和下一步行动会分开呈现。</p></div>
+          <div class="discussion-project"><small>当前课题</small><strong id="discussion-project-name">尚未选择</strong><p id="discussion-project-question">请先建立或选择一个科研项目。</p><button class="btn btn-ghost" type="button" data-go="projects">切换课题</button></div>
+        </section>
+        <div class="discussion-layout">
+          <form id="discussion-form" class="panel form-panel sticky-panel">
+            <div><span class="eyebrow">讨论任务</span><h3>一次只解决一个判断问题</h3><p>先选择讨论角度，再写清你希望模型判断什么、哪些边界不能假设。</p></div>
+            <label class="field"><span>讨论类型</span><select id="discussion-mode"><option value="research_question">研究问题澄清</option><option value="literature_gap">文献缺口审查</option><option value="experiment_review">实验设计审查</option><option value="group_meeting">组会汇报反馈</option><option value="writing_review">论文写作结构审查</option></select></label>
+            <div class="discussion-prompts" aria-label="常用问题模板"><button type="button" data-discussion-prompt="结合当前证据，我的研究问题是否足够明确、可回答？请指出对象、场景、变量和边界中的缺口。">研究问题体检</button><button type="button" data-discussion-prompt="当前证据真正支持哪些文献缺口？哪些只是尚未检索充分，不能宣称为创新？">缺口可信度</button><button type="button" data-discussion-prompt="请审查我的实验设计还缺少哪些基线、消融、统计检验或外部验证，并给出本周可完成的检查清单。">实验审查</button></div>
+            <label class="field"><span>你的问题</span><textarea id="discussion-question" rows="8" minlength="10" maxlength="5000" required placeholder="例如：现有 8 篇证据是否足以支持这个研究缺口？哪些结论还需要补检或回看原文？"></textarea></label>
+            <label class="toggle-row"><input id="discussion-evidence" type="checkbox" checked><span>使用当前项目证据库</span></label>
+            <label class="toggle-row"><input id="discussion-policies" type="checkbox" checked><span>使用已在政策雷达中选中的政策</span></label>
+            <button class="btn btn-primary full" type="submit">开始证据研讨 <span>→</span></button>
+            <small class="form-note">请勿向远程模型提交患者隐私、未公开专利、保密数据或可识别个人的信息。</small>
+          </form>
+          <section id="discussion-results" class="discussion-results empty-state panel"><span>◫</span><h3>选择一个讨论角度，提出具体判断问题</h3><p>没有当前课题时提交按钮会停用；输出会分为直接结论、证据编号、不确定性和本周行动。</p></section>
+        </div>
+      </section>
+
+      <section class="page" id="page-library">
+        <div class="page-intro"><div><span class="step-no">08</span><div><h2>我的证据库</h2><p>收藏保存在你的私有服务存储中；可按科研项目归档、导出与迁移。</p></div></div><button id="export-library" class="btn btn-secondary">导出研究简报</button></div>
+        <div class="library-toolbar"><div class="library-filters"><button class="active" data-kind="">全部</button><button data-kind="paper">论文</button><button data-kind="policy">政策</button><button data-kind="analysis">分析</button><button data-kind="idea">Idea</button><button data-kind="discussion">研讨</button></div><label class="field inline-field"><span>科研项目</span><select id="library-project"><option value="">全部项目</option></select></label></div>
+        <div id="library-results" class="result-list empty-state"><span>▣</span><h3>你的证据库还是空的</h3><p>从检索、政策或分析结果中保存第一条证据。</p></div>
+      </section>
+
+      <section class="page" id="page-students">
+        <div class="page-intro"><div><span class="step-no">09</span><div><h2>科研任务台</h2><p>把“读文献、做实验、写作和投稿”拆成今天能完成的小任务。</p></div></div><span class="local-badge">仅保存在当前浏览器</span></div>
+        <section class="student-hero panel">
+          <div><span class="eyebrow">给刚进入科研的同学</span><h2>不知道下一步做什么时，先把课题变成一周计划</h2><p>任务台不替代导师判断。它帮助你记录截止日期、交付物和证据要求，减少“看了很多，却没有形成结果”的挫败感。</p></div>
+          <div class="student-stat"><strong id="student-task-progress">0 / 0</strong><span>本周已完成</span></div>
+        </section>
+        <div class="student-layout">
+          <form id="student-task-form" class="panel form-panel">
+            <div><span class="eyebrow">新建任务</span><h3>写清楚可交付结果</h3><p>不要写“看论文”，改成“筛出 5 篇含公开代码的基线论文并记录 DOI”。</p></div>
+            <label class="field"><span>任务</span><input id="student-task-title" required maxlength="180" placeholder="例如：整理 5 篇基线论文的样本与指标"></label>
+            <div class="form-row"><label class="field grow"><span>阶段</span><select id="student-task-stage"><option>文献</option><option>实验</option><option>数据</option><option>写作</option><option>投稿</option><option>沟通</option></select></label><label class="field grow"><span>截止日期</span><input id="student-task-date" type="date"></label></div>
+            <label class="field"><span>完成标准</span><textarea id="student-task-proof" rows="4" placeholder="需要留下什么文件、表格、图、代码提交或结论？"></textarea></label>
+            <button class="btn btn-primary full" type="submit">加入本周任务</button>
+          </form>
+          <section class="panel student-board"><div class="grant-head"><div><span class="eyebrow">本周任务</span><h3>可检查的科研进度</h3></div><button id="student-clear-completed" class="text-btn" type="button">清理已完成</button></div><div id="student-task-list" class="student-task-list empty-state"><span>✓</span><h3>还没有任务</h3><p>从一个 30–90 分钟能完成的交付物开始。</p></div></section>
+        </div>
+        <section class="painpoint-grid">
+          <article class="painpoint-card"><span>01</span><h3>第一次做综述</h3><p>先明确纳入标准，再检索；记录中英文检索式、数据库、日期和排除理由。</p><button data-go="explore">打开文献雷达</button></article>
+          <article class="painpoint-card"><span>02</span><h3>读不懂一篇论文</h3><p>先回答痛点、方法变化、证据是否充分、需要回看的四个问题。</p><button data-go="analyze">打开论文解剖</button></article>
+          <article class="painpoint-card"><span>03</span><h3>实验反复失败</h3><p>固定环境、数据版本和随机种子；每次只改变一个变量并保存失败记录。</p><button data-go="guide">看复现清单</button></article>
+          <article class="painpoint-card"><span>04</span><h3>不知道如何与导师沟通</h3><p>带着“本周完成、遇到阻塞、证据、下周决策”四项内容参加组会。</p><button data-go="guide">看沟通模板</button></article>
+        </section>
+      </section>
+
+      <section class="page" id="page-models">
+        <div class="page-intro model-page-intro"><div><span class="step-no">10</span><div><h2>模型控制台</h2><p>连接你自己的模型账户。平台按任务选择一个合适模型，失败时按设置降级，不会默认同时消耗多家额度。</p></div></div><button id="test-llm" class="btn btn-secondary" type="button">测试当前主路由</button></div>
+        <section class="model-status-hero panel" id="model-status-hero">
+          <div class="model-status-copy"><span class="eyebrow">MODEL ORCHESTRATION</span><h2 id="model-status-title">正在读取模型配置</h2><p id="model-status-description">密钥经加密后保存在当前服务端，浏览器只能看到末四位，任何接口都不会返回明文。</p><div class="model-status-pills" id="model-status-pills"></div></div>
+          <div class="model-health" aria-hidden="true"><div><strong id="model-health-count">0</strong><span>已连接</span></div><p>检索增强</p><i></i><p>深度推理</p></div>
+        </section>
+        <section class="model-routing-panel panel">
+          <div class="routing-copy"><span class="eyebrow">SMART ROUTING</span><h3>每项科研任务，只调用必要的模型</h3><p>“均衡”让检索式走快速模型、论文解剖和研究设计走深度模型。只有暂时性网络或限流错误才会自动切换备用服务。</p></div>
+          <form id="model-routing-form" class="routing-controls">
+            <label class="field"><span>任务策略</span><select id="model-routing-mode"><option value="economy">节省优先</option><option value="balanced">均衡（推荐）</option><option value="quality">质量优先</option></select></label>
+            <label class="field"><span>首选服务</span><select id="model-primary-provider"><option value="">按优先级自动选择</option></select></label>
+            <label class="toggle-row compact"><input id="model-fallback-enabled" type="checkbox" checked><span>仅在临时故障时切换备用服务</span></label>
+            <button class="btn btn-primary" type="submit">保存路由</button>
+          </form>
+        </section>
+        <div class="model-route-grid" id="model-route-grid"></div>
+        <section class="provider-section">
+          <div class="section-heading provider-heading"><div><span>BRING YOUR OWN KEY</span><h2>连接模型服务</h2></div><p>支持中国、国际、聚合与本地模型。配置前请确认论文或数据允许发送到该厂商。</p></div>
+          <div class="provider-toolbar" role="tablist" aria-label="模型服务商分组"><button class="active" data-provider-region="all">全部</button><button data-provider-region="中国">国内模型</button><button data-provider-region="国际">国际模型</button><button data-provider-region="聚合">聚合网关</button><button data-provider-region="自定义">本地 / 校内</button></div>
+          <div id="provider-grid" class="provider-grid"></div>
+        </section>
+        <section class="model-usage-section">
+          <div class="section-heading"><div><span>LAST 30 DAYS</span><h2>只记录用量，不记录论文正文</h2></div><p>输入、输出、推理与缓存 Token 分开统计，便于控制等待时间和模型成本。</p></div>
+          <div class="usage-grid model-usage-grid" id="model-usage-grid"></div>
+          <div class="panel model-run-panel"><div class="grant-head"><div><span class="eyebrow">RECENT RUNS</span><h3>最近模型任务</h3></div><small>最多显示 12 条元数据</small></div><div id="model-run-list" class="model-run-list empty-state"><span>⌁</span><p>还没有模型调用记录。</p></div></div>
+        </section>
+        <section class="model-safety panel"><div><span class="eyebrow">DATA BOUNDARY</span><h3>远程模型不是私人硬盘</h3><p>公开论文与已脱敏问题通常适合处理；未发表思路、内部组会材料需要征得团队同意；患者身份、账号凭据、保密协议内容和未公开专利核心禁止发送。</p></div><div class="safety-levels"><span class="safe">适合：公开 / 脱敏</span><span class="careful">谨慎：未发表 / 内部</span><span class="stop">禁止：身份 / 保密</span></div></section>
+        <dialog id="provider-dialog" class="provider-dialog">
+          <form id="provider-form" method="dialog">
+            <div class="provider-dialog-head"><div><span class="eyebrow" id="provider-dialog-region">MODEL PROVIDER</span><h2 id="provider-dialog-title">配置模型服务</h2><p id="provider-dialog-description"></p></div><button id="provider-dialog-close" class="dialog-close" type="button" aria-label="关闭">×</button></div>
+            <input id="provider-id" type="hidden">
+            <label class="field"><span>API Key</span><div class="secret-input"><input id="provider-api-key" type="password" autocomplete="new-password" placeholder="仅本次提交可见"><button id="toggle-provider-key" type="button">显示</button></div><small id="provider-key-hint">保存后只显示末四位；留空表示保留现有密钥。</small></label>
+            <label class="field"><span>Base URL</span><input id="provider-base-url" type="url" spellcheck="false"><small>仅接受该厂商的官方域名；自定义远程地址需管理员授权。</small></label>
+            <div class="form-row"><label class="field grow"><span>快速模型 ID</span><input id="provider-fast-model" required spellcheck="false"></label><label class="field grow"><span>深度模型 ID</span><input id="provider-quality-model" required spellcheck="false"></label></div>
+            <div class="provider-consent"><label><input id="provider-consent" type="checkbox" required><span>我理解：使用该模型会把当前任务所需文字发送给对应厂商，并由我的账户承担费用。</span></label><p id="provider-notice"></p></div>
+            <div class="provider-dialog-actions"><button id="delete-provider" class="btn btn-danger hidden" type="button">删除配置</button><span></span><button id="provider-dialog-cancel" class="btn btn-secondary" type="button">取消</button><button id="save-provider" class="btn btn-primary" type="submit">加密保存</button></div>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="page" id="page-guide">
+        <div class="page-intro"><div><span class="step-no">?</span><div><h2>使用指南</h2><p>按任务找答案，不要求用户先理解 API、模型和元数据术语。</p></div></div><span class="local-badge">随时可回看</span></div>
+        <section class="guide-start panel"><div><span class="eyebrow">3 分钟上手</span><h2>先完成一条最短科研闭环</h2></div><ol><li><b>建立课题</b><span>写下对象、场景、约束和希望验证的关系。</span></li><li><b>中英文检索</b><span>中文写问题，英文写领域术语；筛选有摘要结果。</span></li><li><b>精读并归档</b><span>上传 PDF，核对页码证据，把结论保存到项目。</span></li><li><b>安排下一步</b><span>把未解决问题变成一周内可交付的任务。</span></li></ol></section>
+        <div class="guide-grid">
+          <details class="guide-card" open><summary>为什么很多论文只有题录？</summary><p>摘要是否可用取决于出版方和元数据源。题录仍包含标题、作者、年份、DOI 等信息，但不适合直接做深度解读。开启“只看有摘要”，或通过 DOI、学校订阅和开放获取页面取得原文。</p></details>
+          <details class="guide-card"><summary>中文关键词为什么会影响英文结果？</summary><p>英文数据库可能接受中文输入，但召回通常更窄。请把中文研究问题保留在左侧，并在右侧填写英文同义词、缩写和领域术语；系统会将英文检索式用于英文优先的数据源。</p></details>
+          <details class="guide-card"><summary>PDF 怎样得到可靠中文回答？</summary><p>系统先做版面提取，再进行语义分析。数字版 PDF 优先使用 Markdown 多栏解析；扫描页需要 Tesseract OCR。配置本地模型后才能获得完整中文语义解读；任何关键数字都应回到页码、图表和补充材料核验。</p></details>
+          <details class="guide-card"><summary>如何判断实验是否充分？</summary><p>逐项检查数据代表性、基线公平性、消融或敏感性分析、统计不确定性、外部验证和结论边界。缺一项不一定否定论文，但必须记录为待核验项。</p></details>
+          <details class="guide-card"><summary>复现实验最低清单</summary><p>记录代码版本、运行环境、数据来源与许可、预处理、随机种子、超参数、硬件、评价脚本和失败日志。把原始数据与生成结果分开保存。</p></details>
+          <details class="guide-card"><summary>组会沟通模板</summary><p>本周完成了什么；哪条证据改变了原判断；当前阻塞是什么；需要导师决定什么；下周准备交付什么。尽量附表格、图或可运行代码，而不是只描述过程。</p></details>
+          <details class="guide-card"><summary>知网与 Google Scholar 如何使用？</summary><p>受许可和接口政策限制，平台不会自动抓取。请在原站合法检索并导出 BibTeX、RIS、EndNote、RefMan 或 NBIB，再从文献雷达导入统一证据层。</p></details>
+          <details class="guide-card"><summary>怎样安全使用 AI？</summary><p>不要上传含个人、患者、未公开专利或保密数据的内容到远程模型。把生成内容当待核验草稿；引用、数字、政策适用性和创新性判断必须检查原始来源。</p></details>
+        </div>
+        <section class="community-roadmap panel"><div><span class="eyebrow">科研交流平台路线</span><h3>交流功能先解决可信与安全，再追求热闹</h3><p>公开提问、导师身份、私信和资源互换涉及审核、隐私、学术不端与未成年人保护。当前版本先提供可导出的证据包和结构化提问模板；后续应在举报、审核、机构验证和数据删除机制齐备后上线社区。</p></div><div class="question-template"><strong>高质量提问应包含</strong><span>研究背景</span><span>已尝试方法</span><span>可复现材料</span><span>具体阻塞</span><span>期望反馈</span></div></section>
+      </section>
+
+      <section class="page" id="page-account">
+        <div class="page-intro"><div><span class="step-no">11</span><div><h2>账户与套餐</h2><p>免费版长期可用；需要更多数据源、深度模型与批量能力时再升级。</p></div></div><button id="logout-button" class="btn btn-secondary hidden">退出登录</button></div>
+        <section class="account-hero panel">
+          <div><span class="eyebrow">CURRENT ACCESS</span><h3 id="account-email">开源社区版</h3><p id="account-entitlement">正在加载当前权益…</p></div>
+          <div class="plan-medallion"><small>CURRENT PLAN</small><strong id="account-plan">—</strong><span id="account-expiry">长期有效</span></div>
+        </section>
+        <div class="usage-grid" id="usage-grid"></div>
+        <div class="section-heading account-heading"><div><span>CHOOSE YOUR PATH</span><h2>基础工作免费，高成本能力按需订阅</h2></div><p>付费购买的是托管便利、模型与接口成本，不阻止任何人下载开源代码自行部署。</p></div>
+        <div class="pricing-grid" id="pricing-grid"></div>
+        <section class="community-callout panel">
+          <div><span class="eyebrow">OPEN-SOURCE PROMISE</span><h3>社区版不会变成残缺演示</h3><p>GitHub 上的 Apache-2.0 社区版可在自己的电脑或服务器运行全部本地工作流。Free / Pro 套餐仅用于官方托管服务的算力、商业接口、模型额度、同步与运维。</p></div>
+          <a class="btn btn-secondary" id="repository-link">发布后填写仓库地址</a>
+        </section>
+        <section id="update-status" class="update-status panel"><div><span class="eyebrow">VERSION HEALTH</span><h3>正在检查版本状态</h3><p>配置 GitHub 仓库地址后，可在这里获知是否有新版本。</p></div><span class="local-badge">检查中</span></section>
+      </section>
+
+      <section class="page" id="page-admin">
+        <div class="page-intro"><div><span class="step-no">A</span><div><h2>系统管理</h2><p>管理免费权益，并对自动发现的政策候选进行人工核验与发布。</p></div></div><span class="local-badge warning">仅管理员可见</span></div>
+        <div class="admin-layout" id="grant-admin-layout">
+          <form id="grant-form" class="panel form-panel sticky-panel">
+            <div><span class="eyebrow">COMPLIMENTARY ACCESS</span><h3>赠送全功能权益</h3><p>可设置永久或限时赠送；相同邮箱再次提交会更新原记录。</p></div>
+            <label class="field"><span>用户邮箱</span><input id="grant-email" type="email" autocomplete="off" required placeholder="researcher@university.edu"></label>
+            <label class="field"><span>到期时间（留空为永久）</span><input id="grant-expiry" type="datetime-local"></label>
+            <label class="field"><span>赠送原因 / 备注</span><textarea id="grant-reason" rows="4" placeholder="例如：早期共创用户、合作课题组、教育公益名额"></textarea></label>
+            <button class="btn btn-primary full" type="submit">确认赠送 Pro 权益</button>
+            <small class="admin-safety">权益与规范化邮箱绑定。用户完成邮箱验证码登录后自动生效。</small>
+          </form>
+          <section class="panel grant-panel"><div class="grant-head"><div><span class="eyebrow">ACTIVE GRANTS</span><h3>已赠送用户</h3></div><strong id="grant-count">0</strong></div><div id="grant-list" class="grant-list empty-state"><span>◎</span><h3>暂无赠送记录</h3><p>在左侧输入用户邮箱创建第一条权益。</p></div></section>
+        </div>
+        <section class="panel policy-ops">
+          <div class="policy-ops-head"><div><span class="eyebrow">POLICY LIFECYCLE</span><h3>政策发现与人工审核</h3><p>同步只会发现官方站点中的候选条目；管理员核验标题、日期、原文与适用范围后，才会进入用户政策库。</p></div><div class="policy-sync-metrics"><span><b id="policy-pending-count">0</b> 待审核</span><span><b id="policy-approved-count">0</b> 已发布</span></div></div>
+          <div class="policy-sync-controls"><label class="field grow"><span>选择一个官方政策源</span><select id="policy-sync-source"><option value="state-council">国务院政策文件库</option></select></label><button id="policy-sync-button" class="btn btn-primary" type="button">立即发现候选</button><small id="policy-sync-note">同步任务尚未运行</small></div>
+          <div id="policy-candidate-list" class="candidate-list empty-state"><span>▤</span><h3>暂无政策候选</h3><p>运行一次发现任务，或等待定时任务生成待审核条目。</p></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="login-screen hidden" id="login-screen">
+    <div class="login-card">
+      <div class="login-mark"><i></i><i></i><i></i><i></i></div><span class="eyebrow">EVIDENCE-DRIVEN RESEARCH</span><h2>欢迎使用 LatticeScholar</h2>
+      <p id="login-description">使用高校邮箱验证码登录。无需记忆密码，首次登录自动开启免费权益。</p>
+      <form id="email-login-form" class="login-flow hidden">
+        <div id="email-step"><label class="field"><span>邮箱地址</span><input id="login-email" type="email" autocomplete="email" required placeholder="name@university.edu"></label><button class="btn btn-primary full" type="submit">发送 6 位验证码 <span>→</span></button></div>
+        <div id="code-step" class="hidden"><div class="login-back-row"><button id="change-email" class="text-btn" type="button">← 更换邮箱</button><span id="code-target"></span></div><label class="field"><span>6 位验证码</span><input id="login-code" class="code-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required disabled placeholder="000000"></label><button class="btn btn-primary full" type="submit">验证并进入工作台</button></div>
+      </form>
+      <form id="shared-login-form" class="login-flow hidden"><label class="field"><span>访问密码</span><input id="login-password" type="password" autocomplete="current-password" required></label><button class="btn btn-primary full" type="submit">进入工作台 <span>→</span></button></form>
+      <small id="login-message">验证码 10 分钟有效；登录状态通过 HttpOnly Cookie 安全保存。</small>
+    </div>
+  </div>
+  <div class="progress-bar" id="progress-bar"><div class="progress-bar-inner" id="progress-inner"></div></div>
+  <div class="loader hidden" id="loader"><div class="loader-ring"></div><strong id="loader-text">正在处理…</strong><small>你可以留在当前页面</small></div>
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+  <button class="theme-toggle" id="theme-toggle" title="切换暗色/亮色模式 (Ctrl+D)">☀</button>
+  <button class="back-to-top" id="back-to-top" title="回到顶部">↑</button>
+  <div class="shortcut-hint" id="shortcut-hint">
+    <kbd>Ctrl</kbd>+<kbd>1-7</kbd> 切换页面 · <kbd>Ctrl</kbd>+<kbd>D</kbd> 暗色模式 · <kbd>/</kbd> 聚焦搜索 · <kbd>?</kbd> 快捷键
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

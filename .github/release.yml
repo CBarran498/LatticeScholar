@@ -1,0 +1,16 @@
+changelog:
+  exclude:
+    labels: [ignore-for-release]
+  categories:
+    - title: 重大变更
+      labels: [breaking-change]
+    - title: 新功能
+      labels: [enhancement]
+    - title: 修复
+      labels: [bug]
+    - title: 政策与数据源
+      labels: [policy-source, data-source]
+    - title: 依赖与维护
+      labels: [dependencies]
+    - title: 其他改动
+      labels: ["*"]

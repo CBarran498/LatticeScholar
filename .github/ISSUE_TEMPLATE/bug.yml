@@ -1,0 +1,47 @@
+name: Bug 报告
+description: 报告可复现的软件问题
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "感谢反馈。请删除邮箱、API Key、论文全文和未公开研究内容后再提交。"
+  - type: input
+    id: version
+    attributes:
+      label: LatticeScholar 版本
+      placeholder: 例如 0.4.0
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 使用方式
+      options: [Community 本地版, 官方托管 Free, 官方托管 Pro, Docker/机构部署]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请写出最短、可重复的操作路径。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 系统与浏览器
+      placeholder: macOS 15 / Chrome 140；Python 3.12
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我已删除密钥、验证码、个人信息和未公开科研内容
+          required: true

@@ -1,0 +1,32 @@
+name: 政策来源或政策错误
+description: 建议新增官方政策源，或报告政策过期、修订和错误
+title: "[Policy]: "
+labels: ["policy-source", "needs-verification"]
+body:
+  - type: input
+    id: authority
+    attributes:
+      label: 发文机关或主管部门
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 官方网页地址
+      placeholder: 必须为主管部门或政府官方域名
+    validations:
+      required: true
+  - type: dropdown
+    id: change
+    attributes:
+      label: 反馈类型
+      options: [新增来源, 新增政策, 原文修订, 已废止或失效, 元数据错误, 链接失效]
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 核验依据
+      description: 请提供文号、发布日期、效力说明或官方修订/废止依据。
+    validations:
+      required: true
