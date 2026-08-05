@@ -4,6 +4,11 @@ All notable changes are documented here. The format follows Keep a Changelog and
 
 ## [Unreleased]
 
+- 新增 PyInstaller 桌面打包：用户无需安装 Python，从 GitHub Releases 下载压缩包后双击即可运行。
+- GitHub Actions 自动构建 macOS (arm64/x64)、Windows (x64) 和 Linux (x64) 四个平台的独立可执行文件。
+- 打包模式下数据目录自动使用 `~/.latticescholar/`，与源码开发模式互不干扰。
+- 新增 `docs/LOCAL_SETUP.md` 本地安装与使用完整指南。
+
 ## [0.9.0] - 2026-08-04
 
 - Idea Lab 新增拖放/选择已有工作，支持 PDF、DOCX、PPTX、XLSX、ODT、TXT、Markdown、RTF、HTML、CSV、JSON、BibTeX、RIS、NBIB、LaTeX 和 Jupyter Notebook。

@@ -46,7 +46,24 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 
 收费对象是官方托管服务产生的算力、模型 Token、商业接口、同步、运维与支持成本，而不是人为阉割 GitHub 社区版。更完整的定价、成本边界、转化路径与上线阶段见 [商业化设计](docs/MONETIZATION.md)。
 
-## 三分钟本机启动
+## 免安装桌面版（推荐普通用户）
+
+不需要安装 Python，不需要命令行。从 [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases) 下载对应平台的压缩包，解压后双击运行：
+
+| 平台 | 下载文件 | 启动方式 |
+|---|---|---|
+| macOS (Apple Silicon) | `LatticeScholar-macos-arm64.tar.gz` | 解压后双击 `LatticeScholar` |
+| macOS (Intel) | `LatticeScholar-macos-x64.tar.gz` | 同上 |
+| Windows | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
+| Linux | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
+
+浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。数据保存在用户主目录的 `.latticescholar` 文件夹中。
+
+> macOS 首次打开如果提示"无法验证开发者"：右键 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+
+完整安装指南见 [本地安装与使用完整指南](docs/LOCAL_SETUP.md)。
+
+## 从源码启动（开发者与课题组）
 
 需要 Python 3.9 或更高版本：
 

@@ -22,6 +22,17 @@ pytest -q
 - Bug 修复应带回归测试；界面改动应兼顾键盘操作、移动端和空状态；
 - 不提交 API Key、个人数据、受限论文全文或未获授权的训练/评测材料。
 
+## 桌面打包
+
+项目支持通过 PyInstaller 构建免安装的桌面可执行文件。本地构建方式：
+
+```bash
+pip install pyinstaller
+pyinstaller latticescholar.spec --distpath dist-desktop --workpath build-pyi -y
+```
+
+产物在 `dist-desktop/LatticeScholar/` 目录中。推送 `v*` tag 后 GitHub Actions 会自动在 macOS、Windows 和 Linux 上构建并发布到 Releases。修改了入口点、静态资源加载或依赖项时，请同时验证桌面打包是否正常工作。
+
 ## Commit 与 PR
 
 建议使用小而清晰的提交：`feat:`, `fix:`, `docs:`, `test:`, `refactor:`。PR 描述应包含用户问题、改动、验证方式、截图（界面变更时）和风险/回滚说明。

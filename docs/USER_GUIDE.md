@@ -2,6 +2,11 @@
 
 本指南面向第一次使用科研工作台的高校教师、研究生和本科生。目标不是解释所有技术名词，而是帮助你完成一条可复查的科研流程。
 
+## 启动方式
+
+- **桌面版（推荐）**：从 [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases) 下载对应平台的压缩包，解压后双击 `LatticeScholar`（Windows 上是 `LatticeScholar.exe`），浏览器自动打开，无需安装 Python。
+- **源码运行**：安装 Python 3.9+，执行 `pip install -e .` 后运行 `latticescholar`。详见 [本地安装指南](LOCAL_SETUP.md)。
+
 ## 最短上手路径
 
 1. 在“科研项目”建立一个课题，写清研究对象、场景、约束和希望验证的关系。

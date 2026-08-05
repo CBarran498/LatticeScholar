@@ -4,6 +4,27 @@
 
 ---
 
+## 最快上手：免安装桌面版（不需要 Python）
+
+如果你不想安装 Python 和任何开发工具，可以直接下载打包好的桌面版：
+
+1. 打开 [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases) 页面
+2. 下载对应你电脑平台的压缩包：
+   - **macOS Apple Silicon** (M1/M2/M3/M4)：`LatticeScholar-macos-arm64.tar.gz`
+   - **macOS Intel**：`LatticeScholar-macos-x64.tar.gz`
+   - **Windows**：`LatticeScholar-windows-x64.zip`
+   - **Linux**：`LatticeScholar-linux-x64.tar.gz`
+3. 解压后双击 `LatticeScholar`（Windows 上是 `LatticeScholar.exe`）
+4. 浏览器自动打开，即可使用
+
+> macOS 首次打开如果提示"无法验证开发者"：右键点击 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+
+数据保存在用户主目录的 `.latticescholar` 文件夹中（macOS/Linux 为 `~/.latticescholar/`，Windows 为 `C:\Users\你的用户名\.latticescholar\`）。
+
+如果桌面版满足你的需求，下面的 Python 安装步骤可以跳过。如果你需要从源码运行、参与开发或使用高级 PDF 引擎，请继续阅读。
+
+---
+
 ## 目录
 
 - [一、前提条件：安装 Python](#一前提条件安装-python)

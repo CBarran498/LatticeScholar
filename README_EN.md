@@ -6,6 +6,21 @@ The project is designed around four rules: claims should be traceable, search pa
 
 See the [Chinese README](README.md) for the full quick start, feature matrix, architecture, privacy model, and roadmap.
 
+## Desktop Download (No Python Required)
+
+Download the standalone build for your platform from [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases), extract, and double-click to run. No Python installation, no command line required.
+
+| Platform | File | Launch |
+|---|---|---|
+| macOS (Apple Silicon) | `LatticeScholar-macos-arm64.tar.gz` | Extract, double-click `LatticeScholar` |
+| macOS (Intel) | `LatticeScholar-macos-x64.tar.gz` | Same as above |
+| Windows | `LatticeScholar-windows-x64.zip` | Extract, double-click `LatticeScholar.exe` |
+| Linux | `LatticeScholar-linux-x64.tar.gz` | Extract, run `./LatticeScholar` |
+
+Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. Data is stored in `~/.latticescholar/`.
+
+## From Source (Developers)
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
