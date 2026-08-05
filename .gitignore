@@ -11,6 +11,8 @@ __pycache__/
 coverage.xml
 htmlcov/
 dist/
+dist-desktop/
 build/
+build-pyi/
 release/
 promotion-kit/

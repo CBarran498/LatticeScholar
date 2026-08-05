@@ -372,4 +372,6 @@ def test_cli_starts_server_without_opening_browser(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["latticescholar", "--host", "0.0.0.0", "--port", "9999", "--no-browser"])
     monkeypatch.setattr(cli.uvicorn, "run", lambda app, **kwargs: called.update(app=app, **kwargs))
     cli.main()
-    assert called["app"] == "latticescholar.main:app" and called["port"] == 9999
+    from fastapi import FastAPI
+
+    assert isinstance(called["app"], FastAPI) and called["port"] == 9999

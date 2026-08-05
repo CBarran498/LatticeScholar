@@ -1,0 +1,115 @@
+# Build standalone desktop executables for macOS, Windows, and Linux.
+# Triggered by pushing a version tag (e.g. v0.9.0) or manually.
+
+name: Build Desktop
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macOS-arm64
+            asset: LatticeScholar-macos-arm64
+          - os: macos-13
+            label: macOS-x64
+            asset: LatticeScholar-macos-x64
+          - os: windows-latest
+            label: Windows-x64
+            asset: LatticeScholar-windows-x64
+          - os: ubuntu-latest
+            label: Linux-x64
+            asset: LatticeScholar-linux-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install project and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller latticescholar.spec --distpath dist --workpath build-pyi -y
+
+      - name: Verify executable starts
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            EXE="dist/LatticeScholar/LatticeScholar.exe"
+          else
+            EXE="dist/LatticeScholar/LatticeScholar"
+          fi
+          timeout 10 "$EXE" --no-browser --port 18765 &
+          PID=$!
+          sleep 6
+          curl -sf http://127.0.0.1:18765/api/health || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
+          kill $PID 2>/dev/null || true
+          echo "Smoke test passed"
+
+      - name: Package archive
+        shell: bash
+        run: |
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            7z a "../${{ matrix.asset }}.zip" LatticeScholar/
+          else
+            tar czf "../${{ matrix.asset }}.tar.gz" LatticeScholar/
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: |
+            ${{ matrix.asset }}.zip
+            ${{ matrix.asset }}.tar.gz
+          if-no-files-found: warn
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name '*.zip' -o -name '*.tar.gz' \) -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false
+          files: release-assets/*

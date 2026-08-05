@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import multiprocessing
 import threading
 import webbrowser
 
@@ -10,6 +11,7 @@ from .config import settings
 
 
 def main() -> None:
+    multiprocessing.freeze_support()
     parser = argparse.ArgumentParser(description="Run the LatticeScholar local research workspace")
     parser.add_argument("--host", default=settings.host)
     parser.add_argument("--port", type=int, default=settings.port)
@@ -17,7 +19,9 @@ def main() -> None:
     args = parser.parse_args()
     if not args.no_browser:
         threading.Timer(1.2, lambda: webbrowser.open(f"http://{args.host}:{args.port}")).start()
-    uvicorn.run("latticescholar.main:app", host=args.host, port=args.port, log_level="info")
+    from .main import app
+
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 
 
 if __name__ == "__main__":

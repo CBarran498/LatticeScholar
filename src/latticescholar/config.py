@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-PACKAGE_DIR = Path(__file__).resolve().parent
-PROJECT_DIR = PACKAGE_DIR.parents[1]
+_FROZEN = getattr(sys, "frozen", False)
+_MEIPASS = Path(getattr(sys, "_MEIPASS", "")) if _FROZEN else None
+
+PACKAGE_DIR = _MEIPASS / "latticescholar" if _MEIPASS else Path(__file__).resolve().parent
+PROJECT_DIR = PACKAGE_DIR.parents[1] if not _FROZEN else PACKAGE_DIR
+
+_DEFAULT_DATA_DIR = (
+    str(Path.home() / ".latticescholar") if _FROZEN else str(PROJECT_DIR / ".data")
+)
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -21,7 +29,7 @@ class Settings:
     app_version: str = "0.9.0"
     host: str = os.getenv("LATTICE_HOST", "127.0.0.1")
     port: int = int(os.getenv("LATTICE_PORT", "8765"))
-    data_dir: Path = Path(os.getenv("LATTICE_DATA_DIR", str(PROJECT_DIR / ".data")))
+    data_dir: Path = Path(os.getenv("LATTICE_DATA_DIR", _DEFAULT_DATA_DIR))
     cache_ttl_seconds: int = int(os.getenv("LATTICE_CACHE_TTL", "86400"))
     request_timeout_seconds: float = float(os.getenv("LATTICE_REQUEST_TIMEOUT", "18"))
     crossref_email: str = os.getenv("CROSSREF_EMAIL", "")
