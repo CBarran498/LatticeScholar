@@ -1,6 +1,6 @@
 # LatticeScholar
 
-> 当前版本：v0.9.0。围绕一个课题，把双语检索、论文精读、页码证据、政策背景、多模型研讨和下一步行动留在同一条可复查路径中。
+> 当前版本：v0.9.1。围绕一个课题，把双语检索、论文精读、页码证据、政策背景、多模型研讨和下一步行动留在同一条可复查路径中。
 
 [![CI](https://github.com/CBarran498/LatticeScholar/actions/workflows/ci.yml/badge.svg)](https://github.com/CBarran498/LatticeScholar/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB)](https://www.python.org/)
