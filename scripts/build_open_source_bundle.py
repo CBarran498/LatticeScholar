@@ -10,7 +10,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "OPEN_SOURCE_MANIFEST.txt"
 OUTPUT = ROOT / "release"

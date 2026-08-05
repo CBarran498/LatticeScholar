@@ -8,7 +8,6 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
-
 FORBIDDEN_PARTS = {
     ".git",
     ".venv",
