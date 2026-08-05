@@ -42,11 +42,10 @@ class Settings:
     session_secret: str = os.getenv("LATTICE_SESSION_SECRET", "")
     secure_cookies: bool = _env_bool("LATTICE_SECURE_COOKIES", False)
     auth_mode: str = os.getenv("LATTICE_AUTH_MODE", "accounts").lower()
-    mail_api_url: str = os.getenv(
-        "LATTICE_MAIL_API_URL",
-        "https://lattice-mail.latticescholar.workers.dev",
+    dev_auth: bool = _env_bool(
+        "LATTICE_DEV_AUTH",
+        default=os.getenv("LATTICE_DEV_AUTH") is None and not os.getenv("LATTICE_SMTP_HOST", "").strip(),
     )
-    dev_auth: bool = _env_bool("LATTICE_DEV_AUTH", False)
     admin_emails: str = os.getenv("LATTICE_ADMIN_EMAILS", "")
     smtp_host: str = os.getenv("LATTICE_SMTP_HOST", "")
     smtp_port: int = int(os.getenv("LATTICE_SMTP_PORT", "587"))
@@ -54,10 +53,6 @@ class Settings:
     smtp_password: str = os.getenv("LATTICE_SMTP_PASSWORD", "")
     smtp_from_email: str = os.getenv("LATTICE_SMTP_FROM_EMAIL", "")
     smtp_use_tls: bool = _env_bool("LATTICE_SMTP_USE_TLS", True)
-    trial_days: int = int(os.getenv("LATTICE_TRIAL_DAYS", "7"))
-    early_access_until: str = os.getenv("LATTICE_EARLY_ACCESS_UNTIL", "")
-    billing_enabled: bool = _env_bool("LATTICE_BILLING_ENABLED", False)
-    billing_provider: str = os.getenv("LATTICE_BILLING_PROVIDER", "stripe").lower()
     public_base_url: str = os.getenv("LATTICE_PUBLIC_BASE_URL", "http://127.0.0.1:8765")
     repository_url: str = os.getenv("LATTICE_REPOSITORY_URL", "https://github.com/CBarran498/LatticeScholar")
     policy_sync_interval_hours: float = float(
@@ -66,16 +61,6 @@ class Settings:
     policy_sync_source_ids: str = os.getenv(
         "LATTICE_POLICY_SYNC_SOURCE_IDS", "state-council,most,nsfc,moe"
     )
-    stripe_secret_key: str = os.getenv("STRIPE_SECRET_KEY", "")
-    stripe_webhook_secret: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-    stripe_pro_price_id: str = os.getenv("STRIPE_PRO_PRICE_ID", "")
-    free_searches_per_day: int = int(os.getenv("LATTICE_FREE_SEARCHES_PER_DAY", "20"))
-    free_analyses_per_day: int = int(os.getenv("LATTICE_FREE_ANALYSES_PER_DAY", "5"))
-    free_journal_matches_per_day: int = int(
-        os.getenv("LATTICE_FREE_JOURNAL_MATCHES_PER_DAY", "3")
-    )
-    free_ideas_per_day: int = int(os.getenv("LATTICE_FREE_IDEAS_PER_DAY", "1"))
-    free_library_items: int = int(os.getenv("LATTICE_FREE_LIBRARY_ITEMS", "50"))
     llm_provider: str = os.getenv("LATTICE_LLM_PROVIDER", "none").lower()
     llm_base_url: str = os.getenv("LATTICE_LLM_BASE_URL", "http://127.0.0.1:11434")
     llm_api_key: str = os.getenv("LATTICE_LLM_API_KEY", "")

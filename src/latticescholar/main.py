@@ -48,12 +48,9 @@ from .models import (
 from .services.accounts import (
     AccountService,
     AuthenticationError,
-    QuotaExceeded,
-    UpgradeRequired,
 )
 from .services.analyzer import AnalyzerService
 from .services.auth import AccessManager
-from .services.billing import BillingError, BillingService
 from .services.document_import import DocumentImportError, extract_document
 from .services.exporter import export_bibtex, export_markdown, export_ris
 from .services.ideas import IdeaService
@@ -80,7 +77,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
     research_assistant = ResearchAssistantService(llm)
     access = AccessManager(config.access_password, config.session_secret)
     accounts = AccountService(config, db)
-    billing = BillingService(config, db)
     policy_sync = PolicySyncService(config, db, policies)
     updates = UpdateService(config, db)
 
@@ -157,8 +153,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             "/api/auth/request-code",
             "/api/auth/verify-code",
             "/api/auth/logout",
-            "/api/billing/plans",
-            "/api/billing/webhook/stripe",
         }
         if accounts.enabled:
             request.state.user = accounts.user_from_token(
@@ -195,14 +189,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             content={"detail": "Internal error", "type": type(exc).__name__},
         )
 
-    @app.exception_handler(UpgradeRequired)
-    async def upgrade_required(_: Request, exc: UpgradeRequired):
-        return JSONResponse(status_code=402, content={"detail": str(exc), "code": "upgrade_required"})
-
-    @app.exception_handler(QuotaExceeded)
-    async def quota_exceeded(_: Request, exc: QuotaExceeded):
-        return JSONResponse(status_code=429, content={"detail": str(exc), "code": "quota_exceeded"})
-
     @app.get("/api/health")
     async def health() -> dict:
         return {
@@ -224,6 +210,7 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
                 "required": True,
                 "authenticated": bool(user),
                 "user": accounts.public_user(user) if user else None,
+                "dev_auth": config.dev_auth,
             }
         authenticated = not access.required or access.valid(
             request.cookies.get(access.cookie_name, "")
@@ -239,10 +226,13 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
         if not accounts.enabled:
             raise HTTPException(status_code=409, detail="当前不是邮箱账号模式")
         try:
-            accounts.request_code(payload.email)
+            preview = accounts.request_code(payload.email)
         except AuthenticationError as exc:
             raise HTTPException(status_code=429, detail=str(exc)) from exc
-        return {"sent": True, "expires_in": 600}
+        result = {"sent": True, "expires_in": 600}
+        if preview:
+            result["dev_code"] = preview
+        return result
 
     @app.post("/api/auth/verify-code")
     async def verify_auth_code(payload: AuthVerifyRequest) -> JSONResponse:
@@ -293,7 +283,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             return {
                 "mode": "community",
                 "entitlement": accounts.entitlement(None),
-                "usage": {},
             }
         return accounts.public_user(request.state.user)
 
@@ -380,41 +369,9 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="赠送记录不存在")
         return {"deleted": True}
 
-    @app.get("/api/billing/plans")
-    async def billing_plans() -> dict:
-        return billing.plans()
-
     @app.get("/api/update/check")
     async def update_check() -> dict:
         return await updates.check()
-
-    @app.post("/api/billing/checkout")
-    async def billing_checkout(request: Request) -> dict:
-        if not request.state.user:
-            raise HTTPException(status_code=409, detail="托管订阅需要启用邮箱账号模式")
-        try:
-            return {"url": await billing.create_checkout(request.state.user)}
-        except BillingError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @app.post("/api/billing/portal")
-    async def billing_portal(request: Request) -> dict:
-        if not request.state.user:
-            raise HTTPException(status_code=409, detail="托管订阅需要启用邮箱账号模式")
-        try:
-            return {"url": await billing.create_portal(request.state.user)}
-        except BillingError as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-    @app.post("/api/billing/webhook/stripe")
-    async def stripe_webhook(request: Request) -> dict:
-        payload = await request.body()
-        try:
-            event = billing.verify_event(payload, request.headers.get("Stripe-Signature", ""))
-            processed = billing.process_event(event)
-        except BillingError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return {"received": True, "processed": processed}
 
     @app.get("/api/config")
     async def public_config(request: Request) -> dict:
@@ -443,11 +400,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
                 "model": llm.model_for_task("paper_analysis") if llm.enabled else None,
             },
             "auth_mode": "accounts" if accounts.enabled else ("shared" if access.required else "open"),
-            "billing": {
-                "enabled": config.billing_enabled,
-                "ready": billing.ready,
-                "provider": config.billing_provider,
-            },
             "license": "Apache-2.0",
             "repository_url": config.repository_url,
             "privacy": "Open-source core. Hosted searches send query terms to selected sources.",

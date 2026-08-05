@@ -134,9 +134,9 @@ async function initialize() {
 
 async function initializeWorkspace() {
   try {
-    const [config, health, policies, connectors, policySources, account, plans, projects, syncStatus, updateStatus, llmStatus] = await Promise.all([
+    const [config, health, policies, connectors, policySources, account, projects, syncStatus, updateStatus, llmStatus] = await Promise.all([
       api("/api/config"), api("/api/health"), api("/api/policies"),
-      api("/api/connectors"), api("/api/policy-sources"), api("/api/account"), api("/api/billing/plans"),
+      api("/api/connectors"), api("/api/policy-sources"), api("/api/account"),
       api("/api/projects"), api("/api/policy-sync/status"), api("/api/update/check"), api("/api/llm/status")
     ]);
     state.config = config;
@@ -168,7 +168,7 @@ async function initializeWorkspace() {
     renderPolicies(policies);
     renderConnectors(connectors);
     renderPolicySources(policySources);
-    renderAccount(account, plans);
+    renderAccount(account);
     renderProjects();
     renderProjectOptions();
     renderUpdateStatus(updateStatus);
@@ -189,8 +189,8 @@ function configureLogin(auth) {
   $("#email-login-form").classList.toggle("hidden", !accounts);
   $("#shared-login-form").classList.toggle("hidden", accounts);
   if (accounts) {
-    $("#login-description").textContent = "使用邮箱验证码登录。无需记忆密码，首次登录自动获得免费套餐或试用权益。";
-    $("#login-message").textContent = "验证码将发送到你的邮箱，10 分钟内有效。";
+    $("#login-description").textContent = "使用邮箱验证码登录。无需记忆密码，所有功能对登录用户开放。";
+    $("#login-message").textContent = auth.dev_auth ? "本地模式：验证码将直接显示在页面上。" : "验证码将发送到你的邮箱，10 分钟内有效。";
   } else {
     $("#login-description").textContent = "这是受保护的共享科研工作台。请输入访问密码继续。";
     $("#login-message").textContent = "登录会话通过 HttpOnly Cookie 安全保存。";
@@ -507,7 +507,7 @@ async function emailLogin(event) {
     $("#login-code").disabled = false;
     $("#code-target").textContent = email;
     $("#login-code").focus();
-    message.textContent = "验证码已发送到你的邮箱，请检查收件箱与垃圾邮件。";
+    message.textContent = result.dev_code ? `本地验证码：${result.dev_code}` : "验证码已发送，请检查收件箱与垃圾邮件。";
   } catch (error) { message.textContent = error.message; }
 }
 
@@ -516,7 +516,7 @@ function resetEmailLogin() {
   $("#code-step").classList.add("hidden");
   $("#login-code").value = "";
   $("#login-code").disabled = true;
-  $("#login-message").textContent = "验证码将发送到你的邮箱，10 分钟内有效。";
+  $("#login-message").textContent = "验证码 10 分钟有效；登录状态通过 HttpOnly Cookie 安全保存。";
 }
 
 function formatExpiry(value) {
@@ -525,47 +525,21 @@ function formatExpiry(value) {
   return Number.isNaN(date.valueOf()) ? "长期有效" : `有效至 ${date.toLocaleString("zh-CN", {year:"numeric", month:"short", day:"numeric"})}`;
 }
 
-function renderAccount(account, plans) {
+function renderAccount(account) {
   const entitlement = account.entitlement || {};
-  const planNames = {community:"COMMUNITY", free:"FREE", trial:"PRO TRIAL", early_access:"EARLY ACCESS", pro:"PRO", complimentary:"PRO GIFT", admin:"ADMIN"};
-  const planName = planNames[entitlement.plan] || String(entitlement.plan || "—").toUpperCase();
+  const planNames = {community:"社区版", user:"注册用户", admin:"管理员", anonymous:"未登录"};
+  const planName = planNames[entitlement.plan] || String(entitlement.plan || "—");
   $("#account-email").textContent = account.email || "开源社区版 · 自行部署";
-  $("#account-entitlement").textContent = entitlement.label || "全部本地能力可用";
+  $("#account-entitlement").textContent = entitlement.label || "全部功能可用";
   $("#account-plan").textContent = planName;
-  $("#account-expiry").textContent = formatExpiry(entitlement.expires_at);
-  $("#plan-pill-label").textContent = entitlement.label || planName;
+  $("#account-expiry").textContent = "全功能可用";
+  $("#plan-pill-label").textContent = planName;
   $("#overview-plan").textContent = planName;
-  $("#overview-plan-note").textContent = entitlement.expires_at ? formatExpiry(entitlement.expires_at) : (entitlement.is_pro ? "全功能可用" : "基础功能长期免费");
+  $("#overview-plan-note").textContent = "全功能可用";
   $("#admin-nav").classList.toggle("hidden", account.role !== "admin" && account.mode !== "community");
   $("#logout-button").classList.toggle("hidden", !account.email);
-  const labels = {search:"文献检索", analysis:"论文分析", journal_match:"期刊匹配", idea:"Idea Lab", library:"证据库"};
-  const usage = account.usage || {};
-  $("#usage-grid").innerHTML = Object.entries(usage).map(([key, item]) => {
-    const finite = item.limit != null;
-    const ratio = finite && item.limit ? Math.min(100, Math.round(item.used / item.limit * 100)) : 0;
-    return `<article class="usage-card"><div><span>${escapeHtml(labels[key] || key)}</span><strong>${item.used}<small> / ${finite ? item.limit : "不限"}</small></strong></div><div class="usage-track ${finite ? "" : "unlimited"}"><i style="width:${finite ? ratio : 100}%"></i></div><small>${key === "library" ? "已保存条数" : "今日使用次数"}</small></article>`;
-  }).join("") || '<article class="usage-card community-usage"><span>社区版</span><strong>自行承担运行成本，不受官方托管日额度限制</strong></article>';
-  renderPlans(plans, entitlement, account);
-}
-
-function renderPlans(data, entitlement, account) {
-  const current = entitlement.plan;
-  $("#pricing-grid").innerHTML = data.plans.map(plan => {
-    const pro = plan.id === "pro";
-    const active = pro ? entitlement.is_pro && current !== "community" : current === "free";
-    let action = active ? '<button class="btn btn-secondary full" disabled>当前套餐</button>' : "";
-    if (!action && pro && account.email) action = data.billing_ready ? '<button class="btn btn-primary full" data-checkout>升级 Pro</button>' : '<button class="btn btn-secondary full" disabled>支付通道配置中</button>';
-    if (!action && !pro) action = '<button class="btn btn-secondary full" disabled>长期免费</button>';
-    if (pro && account.billing_customer) action += '<button class="text-btn billing-manage" data-portal>管理订阅与发票</button>';
-    return `<article class="pricing-card ${pro ? "featured" : ""}">${pro ? '<span class="popular">RECOMMENDED</span>' : ""}<span class="eyebrow">${escapeHtml(plan.name.toUpperCase())}</span><div class="price"><strong>${plan.price ? `¥${plan.price}` : "免费"}</strong>${plan.price ? "<small>/ 月 · 建议早鸟价</small>" : "<small>长期可用</small>"}</div><p>${escapeHtml(plan.description)}</p><ul>${plan.features.map(feature=>`<li>✓ ${escapeHtml(feature)}</li>`).join("")}</ul>${action}</article>`;
-  }).join("");
-}
-
-async function openBilling(path) {
-  loading(true, path.includes("checkout") ? "正在创建安全结账页面…" : "正在打开账单管理…");
-  try { const result = await api(path, {method:"POST", body:"{}"}); window.location.assign(result.url); }
-  catch (error) { toast(error.message, "error"); }
-  finally { loading(false); }
+  $("#usage-grid").innerHTML = "";
+  $("#pricing-grid").innerHTML = "";
 }
 
 async function logout() {
@@ -1320,7 +1294,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#library-project").addEventListener("change",()=>loadLibrary($(".library-filters button.active").dataset.kind));
   $("#export-library").addEventListener("click",exportBrief);
   $("#logout-button").addEventListener("click",logout);
-  $("#pricing-grid").addEventListener("click",event=>{if(event.target.closest("[data-checkout]"))openBilling("/api/billing/checkout");if(event.target.closest("[data-portal]"))openBilling("/api/billing/portal")});
   $("#grant-form").addEventListener("submit",submitGrant);
   $("#grant-list").addEventListener("click",event=>{const button=event.target.closest("[data-revoke]");if(button)revokeGrant(button.dataset.revoke)});
   $("#policy-sync-button").addEventListener("click",syncPolicies);

@@ -6,8 +6,7 @@
 - `services/sources.py`：Crossref、Semantic Scholar、OpenAlex、arXiv、PubMed 与授权 Web of Science 适配；
 - `services/importer.py`：知网、Google Scholar 等平台导出的 BibTeX/RIS/EndNote/NBIB 题录解析；
 - `services/auth.py`：HMAC 会话签名与校验；
-- `services/accounts.py`：邮箱验证码、用户会话、Free/Pro 权益与用量门控；
-- `services/billing.py`：Stripe Checkout、账单 Portal、签名 Webhook 与订阅同步；
+- `services/accounts.py`：邮箱验证码、用户会话、管理员/用户角色判定；
 - `services/literature.py`：并发结果的缓存、去重、合并与排序；
 - `services/pdf_parser.py`：默认 PDFPlumber 文字层、双栏顺序、页眉页脚与提取质量；可选高级引擎负责 PyMuPDF/OCR 路径；
 - `services/analyzer.py`：固定中文的零 Token 四问分析、证据窗口与可选模型深度分析；

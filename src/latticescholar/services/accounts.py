@@ -12,8 +12,6 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import httpx
-
 from ..config import Settings
 from ..db import Database
 from .auth import AccessManager
@@ -22,14 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class AuthenticationError(RuntimeError):
-    pass
-
-
-class UpgradeRequired(RuntimeError):
-    pass
-
-
-class QuotaExceeded(RuntimeError):
     pass
 
 
@@ -77,12 +67,8 @@ class AccountService:
                 )
             if config.dev_auth:
                 logger.info(
-                    "开发模式已启用（LATTICE_DEV_AUTH=true）：验证码将记录到本地日志"
+                    "SMTP 未配置，已自动启用开发模式：验证码将直接显示在登录页面上"
                 )
-            elif config.smtp_host:
-                logger.info("邮件发送方式：自定义 SMTP (%s)", config.smtp_host)
-            else:
-                logger.info("邮件发送方式：公共邮件代理 (%s)", config.mail_api_url)
 
     @property
     def enabled(self) -> bool:
@@ -106,10 +92,7 @@ class AccountService:
             with preview.open("a", encoding="utf-8") as handle:
                 handle.write(f"{datetime.now(timezone.utc).isoformat()} {email} {code}\n")
             return code
-        if self.config.smtp_host:
-            self._send_code(email, code)
-        else:
-            self._send_via_api(email, code)
+        self._send_code(email, code)
         return None
 
     def _send_code(self, email: str, code: str) -> None:
@@ -129,23 +112,6 @@ class AccountService:
                 server.login(self.config.smtp_username, self.config.smtp_password)
             server.send_message(message)
 
-    def _send_via_api(self, email: str, code: str) -> None:
-        url = self.config.mail_api_url.rstrip("/") + "/send"
-        try:
-            resp = httpx.post(
-                url,
-                json={"to": email, "code": code},
-                timeout=15,
-            )
-        except httpx.HTTPError as exc:
-            logger.error("邮件代理请求失败: %s", exc)
-            raise AuthenticationError("邮件发送服务暂时不可用，请稍后再试") from exc
-        if resp.status_code == 429:
-            raise AuthenticationError("验证码发送过于频繁，请稍后再试")
-        if resp.status_code != 200:
-            logger.error("邮件代理返回错误 %d: %s", resp.status_code, resp.text)
-            raise AuthenticationError("验证码邮件发送失败，请稍后再试")
-
     def verify_code(self, email: str, code: str) -> Dict[str, Any]:
         record = self.db.get_auth_code(email)
         if not record or record["expires_at"] < int(time.time()):
@@ -156,7 +122,7 @@ class AccountService:
             self.db.fail_auth_code(email)
             raise AuthenticationError("验证码不正确")
         self.db.consume_auth_code(email)
-        return self.db.get_or_create_user(email, self.config.trial_days, email in self.admins)
+        return self.db.get_or_create_user(email, 0, email in self.admins)
 
     def issue_session(self, user_id: int) -> str:
         return self.sessions.issue(30 * 24 * 60 * 60, subject=str(user_id))
@@ -169,42 +135,23 @@ class AccountService:
 
     def entitlement(self, user: Optional[dict]) -> Dict[str, Any]:
         if not self.enabled:
-            return self._entitlement("community", "开源社区版：自行部署时全部本地能力可用", True)
+            return self._entitlement("community", "开源社区版：全部功能可用")
         if not user:
-            return self._entitlement("anonymous", "请登录", False)
-        now = datetime.now(timezone.utc)
+            return self._entitlement("anonymous", "请登录")
         if user.get("role") == "admin":
-            return self._entitlement("admin", "管理员全功能", True)
-        grant = self.db.get_grant(user["email"])
-        grant_expiry = _parse_time(grant.get("expires_at")) if grant else None
-        if grant and (grant_expiry is None or grant_expiry > now):
-            return self._entitlement("complimentary", "管理员赠送全功能", True, grant_expiry)
-        if user.get("subscription_status") in {"active", "trialing"}:
-            return self._entitlement(
-                "pro", "LatticeScholar Pro 订阅", True, _parse_time(user.get("subscription_expires_at"))
-            )
-        early = _parse_time(self.config.early_access_until)
-        if early and early > now:
-            return self._entitlement("early_access", "早期用户全功能期", True, early)
-        trial = _parse_time(user.get("trial_ends_at"))
-        if trial and trial > now:
-            return self._entitlement("trial", "Pro 免费试用", True, trial)
-        return self._entitlement("free", "免费版", False)
+            return self._entitlement("admin", "管理员")
+        return self._entitlement("user", "注册用户")
 
-    def _entitlement(
-        self, plan: str, label: str, pro: bool, expires_at: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+    def _entitlement(self, plan: str, label: str) -> Dict[str, Any]:
         return {
             "plan": plan,
             "label": label,
-            "is_pro": pro,
-            "expires_at": expires_at.isoformat() if expires_at else None,
+            "is_pro": plan not in ("anonymous",),
             "features": {
-                "premium_sources": pro,
-                "bibliography_import": pro,
-                "deep_analysis": pro,
-                "advanced_ideas": pro,
-                "billing": self.config.billing_enabled,
+                "premium_sources": True,
+                "bibliography_import": True,
+                "deep_analysis": True,
+                "advanced_ideas": True,
             },
         }
 
@@ -214,61 +161,19 @@ class AccountService:
             "email": user["email"],
             "role": user["role"],
             "entitlement": self.entitlement(user),
-            "usage": self.usage_snapshot(user),
-            "billing_customer": bool(user.get("stripe_customer_id")),
-        }
-
-    def usage_snapshot(self, user: dict) -> Dict[str, Any]:
-        entitlement = self.entitlement(user)
-        limits = {
-            "search": self.config.free_searches_per_day,
-            "analysis": self.config.free_analyses_per_day,
-            "journal_match": self.config.free_journal_matches_per_day,
-            "idea": self.config.free_ideas_per_day,
-            "library": self.config.free_library_items,
-        }
-        return {
-            feature: {
-                "used": self.db.count_library_items(user["id"])
-                if feature == "library"
-                else self.db.usage(user["id"], feature),
-                "limit": None if entitlement["is_pro"] else limit,
-            }
-            for feature, limit in limits.items()
         }
 
     def check_daily(self, user: Optional[dict], feature: str) -> None:
-        if not self.enabled or not user or self.entitlement(user)["is_pro"]:
-            return
-        limits = {
-            "search": self.config.free_searches_per_day,
-            "analysis": self.config.free_analyses_per_day,
-            "journal_match": self.config.free_journal_matches_per_day,
-            "idea": self.config.free_ideas_per_day,
-        }
-        limit = limits[feature]
-        if self.db.usage(user["id"], feature) >= limit:
-            raise QuotaExceeded(f"今日免费额度已用完（{limit} 次），升级 Pro 后可继续使用")
+        pass
 
     def record(self, user: Optional[dict], feature: str) -> None:
-        if self.enabled and user:
-            self.db.add_usage(user["id"], feature)
+        pass
 
     def require_pro(self, user: Optional[dict], feature_label: str) -> None:
-        if self.enabled and not self.entitlement(user)["is_pro"]:
-            raise UpgradeRequired(f"{feature_label}属于 Pro 功能；可升级、等待试用期或联系管理员赠送权限")
+        pass
 
     def validate_sources(self, user: Optional[dict], sources: list) -> None:
-        if not self.enabled or self.entitlement(user)["is_pro"]:
-            return
-        premium = set(sources) - {"crossref", "arxiv", "pubmed"}
-        if premium:
-            raise UpgradeRequired("Semantic Scholar、OpenAlex 与 Web of Science 托管接入属于 Pro 功能")
+        pass
 
     def check_library(self, user: Optional[dict]) -> None:
-        if not self.enabled or not user or self.entitlement(user)["is_pro"]:
-            return
-        if self.db.count_library_items(user["id"]) >= self.config.free_library_items:
-            raise QuotaExceeded(
-                f"免费版最多保存 {self.config.free_library_items} 条证据，升级 Pro 后可继续保存"
-            )
+        pass

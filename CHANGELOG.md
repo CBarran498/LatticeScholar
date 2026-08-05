@@ -8,6 +8,9 @@ All notable changes are documented here. The format follows Keep a Changelog and
 - GitHub Actions 自动构建 macOS (arm64/x64)、Windows (x64) 和 Linux (x64) 四个平台的独立可执行文件。
 - 打包模式下数据目录自动使用 `~/.latticescholar/`，与源码开发模式互不干扰。
 - 新增 `docs/LOCAL_SETUP.md` 本地安装与使用完整指南。
+- 全面开源化：移除 Stripe 计费系统、Pro/Free 会员分层和使用次数限制，所有功能对所有登录用户免费开放。
+- 简化用户角色为管理员和普通用户两种，不再区分会员等级。
+- 本地运行时验证码自动显示在页面上（无需配置 SMTP），部署到服务器时配置 SMTP 通过邮件发送验证码。
 
 ## [0.9.0] - 2026-08-04
 

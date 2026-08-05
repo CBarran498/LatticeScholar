@@ -1,7 +1,3 @@
-import hashlib
-import hmac
-import json
-import time
 from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
@@ -180,18 +176,16 @@ def test_private_access_and_bibliography_import(tmp_path):
         assert history[0]["query"] == "题录导入：records.ris"
 
 
-def _email_login(client, email, data_dir=None):
+def _email_login(client, email):
     requested = client.post("/api/auth/request-code", json={"email": email})
     assert requested.status_code == 200
-    assert data_dir is not None, "_email_login requires data_dir for dev_auth log"
-    log = (data_dir / "auth-preview.log").read_text(encoding="utf-8")
-    code = [line for line in log.strip().splitlines() if email in line][-1].split()[-1]
+    code = requested.json()["dev_code"]
     verified = client.post("/api/auth/verify-code", json={"email": email, "code": code})
     assert verified.status_code == 200
     return verified.json()["user"]
 
 
-def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
+def test_email_accounts_admin_and_user_roles(tmp_path):
     config = Settings(
         data_dir=tmp_path,
         llm_provider="none",
@@ -199,7 +193,6 @@ def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
         dev_auth=True,
         session_secret="account-test-secret",
         admin_emails="admin@example.edu",
-        trial_days=0,
     )
     app = create_app(config)
     with TestClient(app) as client:
@@ -207,80 +200,15 @@ def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
         assert status["mode"] == "accounts"
         assert status["authenticated"] is False
 
-        user = _email_login(client, "researcher@example.edu", data_dir=tmp_path)
-        assert user["entitlement"]["plan"] == "free"
-        blocked = client.post(
-            "/api/search",
-            json={"query": "machine learning", "sources": ["semantic_scholar"]},
-        )
-        assert blocked.status_code == 402
-        assert blocked.json()["code"] == "upgrade_required"
-        import_blocked = client.post(
-            "/api/import/bibliography",
-            files={"file": ("sample.ris", b"TY  - JOUR\nTI  - Example\nER  -\n")},
-        )
-        assert import_blocked.status_code == 402
-
-        client.post("/api/auth/logout")
-        admin = _email_login(client, "admin@example.edu", data_dir=tmp_path)
-        assert admin["role"] == "admin"
-        granted = client.post(
-            "/api/admin/grants",
-            json={"email": "researcher@example.edu", "reason": "高校合作测试"},
-        )
-        assert granted.status_code == 200
-        assert client.get("/api/admin/grants").json()[0]["email"] == "researcher@example.edu"
-
-        client.post("/api/auth/logout")
-        user = _email_login(client, "researcher@example.edu", data_dir=tmp_path)
-        assert user["entitlement"]["plan"] == "complimentary"
+        user = _email_login(client, "researcher@example.edu")
+        assert user["entitlement"]["plan"] == "user"
         assert user["entitlement"]["is_pro"] is True
+        assert user["role"] == "user"
 
-
-def test_signed_stripe_webhook_activates_subscription_and_is_idempotent(tmp_path):
-    webhook_secret = "whsec_local_test"
-    config = Settings(
-        data_dir=tmp_path,
-        llm_provider="none",
-        auth_mode="accounts",
-        dev_auth=True,
-        session_secret="billing-test-secret",
-        trial_days=0,
-        billing_enabled=True,
-        stripe_secret_key="sk_test_local",
-        stripe_webhook_secret=webhook_secret,
-        stripe_pro_price_id="price_test_pro",
-    )
-    with TestClient(create_app(config)) as client:
-        user = _email_login(client, "paid@example.edu", data_dir=tmp_path)
-        event = {
-            "id": "evt_checkout_1",
-            "type": "checkout.session.completed",
-            "data": {
-                "object": {
-                    "client_reference_id": str(user["id"]),
-                    "customer": "cus_123",
-                    "subscription": "sub_123",
-                }
-            },
-        }
-        payload = json.dumps(event, separators=(",", ":")).encode()
-        timestamp = int(time.time())
-        signature = hmac.new(
-            webhook_secret.encode(), str(timestamp).encode() + b"." + payload, hashlib.sha256
-        ).hexdigest()
-        headers = {"Stripe-Signature": f"t={timestamp},v1={signature}"}
-        first = client.post("/api/billing/webhook/stripe", content=payload, headers=headers)
-        assert first.status_code == 200
-        assert first.json()["processed"] is True
-        second = client.post("/api/billing/webhook/stripe", content=payload, headers=headers)
-        assert second.json()["processed"] is False
-        assert client.get("/api/account").json()["entitlement"]["plan"] == "pro"
-        assert client.post(
-            "/api/billing/webhook/stripe",
-            content=payload,
-            headers={"Stripe-Signature": f"t={timestamp},v1=bad"},
-        ).status_code == 400
+        client.post("/api/auth/logout")
+        admin = _email_login(client, "admin@example.edu")
+        assert admin["role"] == "admin"
+        assert admin["entitlement"]["plan"] == "admin"
 
 
 def test_project_workspace_records_reproducible_search_and_exports_citations(tmp_path):
@@ -350,7 +278,6 @@ def test_admin_policy_review_publishes_dynamic_policy(tmp_path):
         dev_auth=True,
         session_secret="policy-admin-test",
         admin_emails="admin@example.edu",
-        trial_days=0,
     )
     app = create_app(config)
     db = Database(config.database_path)
@@ -370,7 +297,7 @@ def test_admin_policy_review_publishes_dynamic_policy(tmp_path):
         }
     )
     with TestClient(app) as client:
-        _email_login(client, "admin@example.edu", data_dir=tmp_path)
+        _email_login(client, "admin@example.edu")
         candidates = client.get("/api/admin/policy-candidates").json()
         reviewed = client.post(
             f"/api/admin/policy-candidates/{candidates[0]['id']}/review",

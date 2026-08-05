@@ -56,7 +56,7 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 | Windows 10/11 (64 位) | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
 | Linux x64 (Ubuntu 22.04+/Debian 12+) | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
 
-浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入你的邮箱，6 位验证码会发送到你的邮箱中，无需额外配置。数据保存在用户主目录的 `.latticescholar` 文件夹中。
+浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入邮箱后验证码直接显示在页面上，输入即可登录。所有功能对登录用户完全免费开放。数据保存在用户主目录的 `.latticescholar` 文件夹中。
 
 > **macOS Intel 用户**：下载 ARM64 版本即可，macOS 会通过 Rosetta 2 自动翻译运行，无需额外操作。
 >
@@ -81,7 +81,7 @@ pip install -e .
 latticescholar
 ```
 
-打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页，输入邮箱后验证码会直接显示在页面上（本地未配置 SMTP 时自动启用开发模式）。第一个用 `LATTICE_ADMIN_EMAILS` 中邮箱登录的用户为管理员（Pro 权益），其他用户默认 Free（7 天试用 Pro）。
+打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页，输入邮箱后验证码直接显示在页面上，输入即可登录。所有功能对登录用户完全免费开放，只区分管理员和普通用户。
 
 Windows PowerShell：
 
@@ -92,36 +92,21 @@ pip install -e .
 latticescholar
 ```
 
-## 邮箱登录、试用和管理员赠权
+## 邮箱登录与管理员
 
 默认即为邮箱登录模式（`LATTICE_AUTH_MODE=accounts`）。本地未配置 SMTP 时，验证码会直接显示在登录页（开发模式自动启用），无需手动设置任何环境变量。
 
-建议在 `.env` 中设置管理员邮箱，以获得 Pro 权益和管理功能：
+建议在 `.env` 中设置管理员邮箱：
 
 ```bash
 LATTICE_ADMIN_EMAILS=owner@example.edu
 ```
 
-公网部署时需配置 SMTP，验证码将通过真实邮件发送，开发模式自动关闭。管理员用 `LATTICE_ADMIN_EMAILS` 中的邮箱登录后，侧栏会出现"系统管理"，可输入任意规范邮箱并赠送永久或限时 Pro 权益，也可核验自动发现的政策候选。用户完成邮箱验证码登录后自动生效。
+管理员用 `LATTICE_ADMIN_EMAILS` 中的邮箱登录后，侧栏会出现"系统管理"，可核验自动发现的政策候选。所有功能对所有登录用户免费开放，无使用限制。
+
+公网部署时需配置 SMTP，验证码将通过真实邮件发送，开发模式自动关闭。
 
 如需恢复无登录模式，设置 `LATTICE_AUTH_MODE=open` 即可。
-
-发布 GitHub 仓库后设置 `LATTICE_REPOSITORY_URL=https://github.com/你的账号/latticescholar`，账户页会显示正确的开源仓库入口。
-
-可用 `LATTICE_EARLY_ACCESS_UNTIL=2026-12-31T23:59:59+08:00` 让截止日期前的全部注册用户免费使用全功能，适合冷启动阶段。
-
-## Stripe 订阅
-
-```bash
-export LATTICE_BILLING_ENABLED=true
-export LATTICE_BILLING_PROVIDER=stripe
-export LATTICE_PUBLIC_BASE_URL=https://research.example.com
-export STRIPE_SECRET_KEY=sk_live_xxx
-export STRIPE_PRO_PRICE_ID=price_xxx
-export STRIPE_WEBHOOK_SECRET=whsec_xxx
-```
-
-Webhook 地址为 `https://你的域名/api/billing/webhook/stripe`。应用会核验原始请求体签名、拒绝超过五分钟的事件并按事件 ID 幂等处理。价格以 Stripe Price 对象为准；界面中的 ¥15 是早鸟定价建议，不会替代支付后台金额。
 
 完整生产环境变量与 HTTPS 部署见 [托管部署方案](docs/PRIVATE_DEPLOYMENT.md)。
 
@@ -241,8 +226,7 @@ flowchart LR
     ROUTER --> CN["DeepSeek · Qwen · GLM · Kimi 等"]
     ROUTER --> GLOBAL["OpenAI · Claude · Gemini 等"]
     ROUTER --> LOCAL["Ollama · 校内兼容接口"]
-    ACCOUNT --> BILLING["Stripe Checkout · Portal · 签名 Webhook"]
-    ADMIN["管理员邮箱赠权"] --> ACCOUNT
+    ADMIN["管理员"] --> ACCOUNT
 ```
 
 ## 开发与验证
@@ -253,7 +237,7 @@ ruff check .
 pytest -q
 ```
 
-项目包含账号登录、免费额度、Pro 功能门控、管理员赠权、科研项目隔离、检索留痕、政策审核生命周期、题录导出，以及 Stripe Webhook 签名与幂等测试。在线数据源烟雾测试可运行 `python scripts/smoke_online.py`。
+项目包含账号登录、管理员/用户角色、科研项目隔离、检索留痕、政策审核生命周期和题录导出测试。在线数据源烟雾测试可运行 `python scripts/smoke_online.py`。
 
 ## 文档
 

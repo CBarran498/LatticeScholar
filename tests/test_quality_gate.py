@@ -22,13 +22,10 @@ from latticescholar.models import (
 from latticescholar.services.accounts import (
     AccountService,
     AuthenticationError,
-    QuotaExceeded,
-    UpgradeRequired,
     _parse_time,
     load_or_create_session_secret,
 )
 from latticescholar.services.analyzer import AnalyzerService, _select_evidence_window
-from latticescholar.services.billing import BillingError, BillingService
 from latticescholar.services.exporter import export_bibtex, export_markdown, export_ris
 from latticescholar.services.ideas import IdeaService
 from latticescholar.services.literature import LiteratureService
@@ -197,43 +194,8 @@ async def test_update_service_all_outcomes(tmp_path, monkeypatch):
     assert (await missing.check())["status"] == "repository_not_configured"
 
 
-@pytest.mark.asyncio
-async def test_billing_checkout_portal_signature_and_events(tmp_path, monkeypatch):
-    config = Settings(
-        data_dir=tmp_path, billing_enabled=True, stripe_secret_key="sk", stripe_pro_price_id="price",
-        stripe_webhook_secret="whsec", public_base_url="https://research.example/",
-    )
-    db = Database(config.database_path)
-    service = BillingService(config, db)
-    assert service.ready and service.plans()["billing_ready"]
-
-    async def fake_post(path, data):
-        assert path.startswith("/v1/")
-        return {"url": "https://stripe.example/session"}
-    monkeypatch.setattr(service, "_post", fake_post)
-    user = db.get_or_create_user("person@example.edu", 0)
-    assert await service.create_checkout(user) == "https://stripe.example/session"
-    db.update_subscription(user_id=user["id"], customer_id="cus_1", subscription_id="sub_1", status="active")
-    user = db.get_user_by_id(user["id"])
-    assert await service.create_portal(user) == "https://stripe.example/session"
-
-    event = {"id": "evt_1", "type": "checkout.session.completed", "data": {"object": {"client_reference_id": str(user["id"]), "customer": "cus_2", "subscription": "sub_2"}}}
-    payload = json.dumps(event).encode()
-    timestamp = int(time.time())
-    signature = hmac.new(b"whsec", str(timestamp).encode() + b"." + payload, hashlib.sha256).hexdigest()
-    verified = service.verify_event(payload, f"t={timestamp},v1={signature}")
-    assert service.process_event(verified) is True and service.process_event(verified) is False
-    update_event = {"id": "evt_2", "type": "customer.subscription.deleted", "data": {"object": {"customer": "cus_2", "id": "sub_2", "status": "canceled", "current_period_end": timestamp}}}
-    assert service.process_event(update_event)
-    assert service._timestamp_iso(None) is None and service._timestamp_iso(timestamp)
-    with pytest.raises(BillingError):
-        service.verify_event(b"{}", "bad")
-    with pytest.raises(BillingError):
-        service.process_event({})
-
-
-def test_account_entitlements_quotas_and_login(tmp_path, monkeypatch):
-    config = Settings(data_dir=tmp_path, auth_mode="accounts", dev_auth=True, trial_days=0, free_searches_per_day=1, free_library_items=0, admin_emails="admin@example.edu")
+def test_account_roles_and_login(tmp_path, monkeypatch):
+    config = Settings(data_dir=tmp_path, auth_mode="accounts", dev_auth=True, admin_emails="admin@example.edu")
     db = Database(config.database_path)
     service = AccountService(config, db)
     code = service.request_code("admin@example.edu")
@@ -247,22 +209,13 @@ def test_account_entitlements_quotas_and_login(tmp_path, monkeypatch):
     assert service.user_from_token(token)["email"] == "admin@example.edu"
     assert service.user_from_token("bad") is None
 
-    free = db.get_or_create_user("free@example.edu", 0)
-    assert service.entitlement(free)["plan"] == "free"
-    db.add_usage(free["id"], "search")
-    with pytest.raises(QuotaExceeded):
-        service.check_daily(free, "search")
-    with pytest.raises(UpgradeRequired):
-        service.require_pro(free, "深度分析")
-    with pytest.raises(UpgradeRequired):
-        service.validate_sources(free, ["semantic_scholar"])
-    with pytest.raises(QuotaExceeded):
-        service.check_library(free)
-    db.upsert_grant("free@example.edu", None, "tester", user["id"])
-    assert service.entitlement(free)["plan"] == "complimentary"
-    assert service.public_user(free)["usage"]["search"]["limit"] is None
-    service.record(free, "analysis")
-    assert db.usage(free["id"], "analysis") == 1
+    regular = db.get_or_create_user("user@example.edu", 0)
+    assert service.entitlement(regular)["plan"] == "user"
+    assert service.entitlement(regular)["is_pro"] is True
+    service.check_daily(regular, "search")
+    service.require_pro(regular, "深度分析")
+    service.validate_sources(regular, ["semantic_scholar"])
+    service.check_library(regular)
     assert _parse_time("bad") is None and _parse_time(None) is None
     assert load_or_create_session_secret(config) == load_or_create_session_secret(config)
 
