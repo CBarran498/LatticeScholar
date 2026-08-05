@@ -12,7 +12,6 @@ from fastapi.staticfiles import StaticFiles
 from .config import Settings, settings
 from .db import Database
 from .models import (
-    AdminGrantRequest,
     AnalyzeRequest,
     AuthEmailRequest,
     AuthVerifyRequest,
@@ -342,33 +341,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="检索记录不存在")
         return {"deleted": True}
 
-    @app.get("/api/admin/grants")
-    async def list_admin_grants(request: Request) -> list:
-        if not request.state.user or request.state.user.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="仅管理员可以查看赠送权益")
-        return db.list_grants()
-
-    @app.post("/api/admin/grants")
-    async def create_admin_grant(payload: AdminGrantRequest, request: Request) -> dict:
-        if not request.state.user or request.state.user.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="仅管理员可以赠送权益")
-        if payload.expires_at:
-            try:
-                datetime.fromisoformat(payload.expires_at.replace("Z", "+00:00"))
-            except ValueError as exc:
-                raise HTTPException(status_code=422, detail="到期时间必须是 ISO 8601 格式") from exc
-        return db.upsert_grant(
-            payload.email, payload.expires_at, payload.reason, request.state.user["id"]
-        )
-
-    @app.delete("/api/admin/grants/{email}")
-    async def remove_admin_grant(email: str, request: Request) -> dict:
-        if not request.state.user or request.state.user.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="仅管理员可以撤销赠送权益")
-        if not db.delete_grant(email.strip().casefold()):
-            raise HTTPException(status_code=404, detail="赠送记录不存在")
-        return {"deleted": True}
-
     @app.get("/api/update/check")
     async def update_check() -> dict:
         return await updates.check()
@@ -443,7 +415,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
     async def save_model_provider(
         provider_id: str, payload: ProviderCredentialRequest, request: Request
     ) -> dict:
-        accounts.require_pro(request.state.user, "模型服务配置")
         try:
             return provider_vault.save(
                 owner_id(request),
@@ -460,7 +431,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.delete("/api/model-providers/{provider_id}")
     async def delete_model_provider(provider_id: str, request: Request) -> dict:
-        accounts.require_pro(request.state.user, "模型服务配置")
         try:
             deleted = provider_vault.delete(owner_id(request), provider_id)
         except ValueError as exc:
@@ -469,7 +439,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/api/model-providers/{provider_id}/test")
     async def test_model_provider(provider_id: str, request: Request) -> dict:
-        accounts.require_pro(request.state.user, "模型连接测试")
         try:
             result = await llm.test_connection(
                 model_user_id(request), owner_id=owner_id(request), provider_id=provider_id
@@ -481,7 +450,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.put("/api/model-routing")
     async def save_model_routing(payload: ModelRoutingRequest, request: Request) -> dict:
-        accounts.require_pro(request.state.user, "模型智能路由")
         try:
             return provider_vault.save_routing(
                 owner_id(request), payload.mode, payload.primary_provider, payload.fallback_enabled
@@ -491,7 +459,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/api/llm/test")
     async def test_llm(request: Request) -> dict:
-        accounts.require_pro(request.state.user, "模型连接测试")
         try:
             result = await llm.test_connection(
                 model_user_id(request), owner_id=owner_id(request)
@@ -505,7 +472,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
     async def create_search_strategy(
         payload: SearchStrategyRequest, request: Request
     ) -> SearchStrategyResponse:
-        accounts.require_pro(request.state.user, "DeepSeek 中英文检索策略")
         project = require_owned_project(payload.project_id, request) if payload.project_id else None
         try:
             result = await request.app.state.research_assistant.search_strategy(
@@ -520,7 +486,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
     async def research_discussion(
         payload: ResearchDiscussionRequest, request: Request
     ) -> ResearchDiscussionResponse:
-        accounts.require_pro(request.state.user, "DeepSeek 课题研讨")
         project = require_owned_project(payload.project_id, request)
         evidence = (
             db.list_library_items(owner_id=owner_id(request), project_id=payload.project_id)
@@ -579,8 +544,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
         user = http_request.state.user
         if request.project_id:
             require_owned_project(request.project_id, http_request)
-        accounts.check_daily(user, "search")
-        accounts.validate_sources(user, request.sources)
         if accounts.enabled and not accounts.entitlement(user)["is_pro"]:
             request.limit = min(request.limit, 20)
         result = await http_request.app.state.literature.search(request)
@@ -592,7 +555,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             result.cache_hit,
             result.elapsed_ms,
         )
-        accounts.record(user, "search")
         return result
 
     @app.post("/api/import/bibliography", response_model=SearchResponse)
@@ -602,7 +564,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
         source_name: str = Form(default="Imported record"),
         project_id: Optional[int] = Form(default=None),
     ) -> SearchResponse:
-        accounts.require_pro(http_request.state.user, "批量题录导入")
         if project_id:
             require_owned_project(project_id, http_request)
         content = await file.read(5 * 1024 * 1024 + 1)
@@ -639,15 +600,10 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/api/analyze", response_model=PaperAnalysis)
     async def analyze(request: AnalyzeRequest, http_request: Request) -> PaperAnalysis:
-        user = http_request.state.user
-        accounts.check_daily(user, "analysis")
-        if request.use_llm:
-            accounts.require_pro(user, "模型深度分析")
         result = await http_request.app.state.analyzer.analyze(
             request, model_user_id(http_request), owner_id(http_request)
         )
         record_model_usage(http_request, result.usage)
-        accounts.record(user, "analysis")
         return result
 
     @app.post("/api/analyze/pdf", response_model=PaperAnalysis)
@@ -658,10 +614,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
         research_question: str = "",
         use_llm: bool = True,
     ) -> PaperAnalysis:
-        user = http_request.state.user
-        accounts.check_daily(user, "analysis")
-        if use_llm:
-            accounts.require_pro(user, "PDF 模型深度分析")
         if file.content_type not in {"application/pdf", "application/octet-stream"}:
             raise HTTPException(status_code=415, detail="仅支持 PDF 格式文件")
         content = await file.read(15 * 1024 * 1024 + 1)
@@ -703,17 +655,13 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             "PDF 仅在内存中解析且不会由应用保存；中文解释与原文证据引用分开展示。"
         )
         result.warnings = list(dict.fromkeys(result.warnings))
-        accounts.record(user, "analysis")
         return result
 
     @app.post("/api/journals/match", response_model=List[JournalRecommendation])
     async def match_journals(
         request: JournalMatchRequest, http_request: Request
     ) -> List[JournalRecommendation]:
-        user = http_request.state.user
-        accounts.check_daily(user, "journal_match")
         result = await http_request.app.state.journals.match(request)
-        accounts.record(user, "journal_match")
         return result
 
     @app.get("/api/policies", response_model=List[Policy])
@@ -796,15 +744,10 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/api/ideas", response_model=IdeaResponse)
     async def generate_ideas(request: IdeaRequest, http_request: Request) -> IdeaResponse:
-        user = http_request.state.user
-        accounts.check_daily(user, "idea")
-        if request.use_llm:
-            accounts.require_pro(user, "模型增强 Idea Lab")
         result = await http_request.app.state.ideas.generate(
             request, model_user_id(http_request), owner_id(http_request)
         )
         record_model_usage(http_request, result.usage)
-        accounts.record(user, "idea")
         return result
 
     @app.get("/api/library", response_model=List[LibraryItem])
@@ -821,7 +764,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/api/library", response_model=LibraryItem)
     async def save_library(item: LibraryItemCreate, request: Request) -> LibraryItem:
-        accounts.check_library(request.state.user)
         if item.project_id:
             require_owned_project(item.project_id, request)
         return db.add_library_item(item, owner_id(request))

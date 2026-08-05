@@ -13,8 +13,6 @@ const state = {
   policySources: [],
   auth: null,
   account: null,
-  plans: null,
-  grants: [],
   projects: [],
   activeProjectId: null,
   searchHistory: [],
@@ -144,7 +142,6 @@ async function initializeWorkspace() {
     state.connectors = connectors;
     state.policySources = policySources;
     state.account = account;
-    state.plans = plans;
     state.projects = projects;
     state.policySyncStatus = syncStatus;
     state.llmStatus = llmStatus;
@@ -419,9 +416,6 @@ function canManagePolicies() {
 }
 
 async function loadAdminWorkspace() {
-  const accountAdmin = state.account?.role === "admin";
-  $("#grant-admin-layout").classList.toggle("hidden", !accountAdmin);
-  if (accountAdmin) await loadGrants();
   if (!canManagePolicies()) return;
   try {
     const [candidates, status] = await Promise.all([api("/api/admin/policy-candidates?status=pending"), api("/api/policy-sync/status")]);
@@ -545,33 +539,6 @@ function renderAccount(account) {
 async function logout() {
   await api("/api/auth/logout", {method:"POST", body:"{}"});
   window.location.reload();
-}
-
-async function loadGrants() {
-  try { state.grants = await api("/api/admin/grants"); renderGrants(state.grants); }
-  catch (error) { toast(error.message, "error"); }
-}
-
-function renderGrants(items) {
-  $("#grant-count").textContent = items.length;
-  const container = $("#grant-list");
-  if (!items.length) { container.className = "grant-list empty-state"; container.innerHTML = '<span>◎</span><h3>暂无赠送记录</h3><p>在左侧输入用户邮箱创建第一条权益。</p>'; return; }
-  container.className = "grant-list";
-  container.innerHTML = items.map(item => `<article class="grant-card"><div><strong>${escapeHtml(item.email)}</strong><p>${escapeHtml(item.reason || "未填写备注")}</p><small>${item.expires_at ? formatExpiry(item.expires_at) : "永久赠送"} · 更新于 ${escapeHtml(new Date(item.created_at).toLocaleString())}</small></div><button class="text-btn danger" data-revoke="${escapeHtml(item.email)}">撤销</button></article>`).join("");
-}
-
-async function submitGrant(event) {
-  event.preventDefault();
-  const rawExpiry = $("#grant-expiry").value;
-  const body = {email:$("#grant-email").value.trim(), expires_at:rawExpiry ? new Date(rawExpiry).toISOString() : null, reason:$("#grant-reason").value.trim()};
-  try { await api("/api/admin/grants", {method:"POST", body:JSON.stringify(body)}); event.target.reset(); await loadGrants(); toast("已为该邮箱授予 Pro 全功能权益"); }
-  catch (error) { toast(error.message, "error"); }
-}
-
-async function revokeGrant(email) {
-  if (!window.confirm(`确认撤销 ${email} 的免费 Pro 权益？`)) return;
-  try { await api(`/api/admin/grants/${encodeURIComponent(email)}`, {method:"DELETE"}); await loadGrants(); toast("权益已撤销"); }
-  catch (error) { toast(error.message, "error"); }
 }
 
 async function importBibliography(event) {
@@ -1294,8 +1261,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#library-project").addEventListener("change",()=>loadLibrary($(".library-filters button.active").dataset.kind));
   $("#export-library").addEventListener("click",exportBrief);
   $("#logout-button").addEventListener("click",logout);
-  $("#grant-form").addEventListener("submit",submitGrant);
-  $("#grant-list").addEventListener("click",event=>{const button=event.target.closest("[data-revoke]");if(button)revokeGrant(button.dataset.revoke)});
   $("#policy-sync-button").addEventListener("click",syncPolicies);
   $("#policy-candidate-list").addEventListener("click",reviewPolicyCandidate);
   $("#student-task-form").addEventListener("submit",submitStudentTask);

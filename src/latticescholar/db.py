@@ -328,20 +328,19 @@ class Database:
             ).fetchone()
         return int(row["total"])
 
-    def get_or_create_user(self, email: str, trial_days: int, is_admin: bool = False) -> dict:
+    def get_or_create_user(self, email: str, trial_days: int = 0, is_admin: bool = False) -> dict:
         now = datetime.now(timezone.utc)
-        trial_end = (now + timedelta(days=max(0, trial_days))).isoformat()
         role = "admin" if is_admin else "user"
         with self._lock, self._connect() as conn:
             conn.execute(
                 """
-                INSERT INTO users(email,role,created_at,trial_ends_at,last_login_at)
-                VALUES(?,?,?,?,?)
+                INSERT INTO users(email,role,created_at,last_login_at)
+                VALUES(?,?,?,?)
                 ON CONFLICT(email) DO UPDATE SET
                     role=CASE WHEN excluded.role='admin' THEN 'admin' ELSE users.role END,
                     last_login_at=excluded.last_login_at
                 """,
-                (email, role, now.isoformat(), trial_end, now.isoformat()),
+                (email, role, now.isoformat(), now.isoformat()),
             )
             row = conn.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
         return dict(row)
@@ -381,45 +380,6 @@ class Database:
     def consume_auth_code(self, email: str) -> None:
         with self._lock, self._connect() as conn:
             conn.execute("DELETE FROM auth_codes WHERE email=?", (email,))
-
-    def upsert_grant(
-        self, email: str, expires_at: Optional[str], reason: str, granted_by: int
-    ) -> dict:
-        created_at = datetime.now(timezone.utc).isoformat()
-        with self._lock, self._connect() as conn:
-            conn.execute(
-                """
-                INSERT INTO complimentary_grants(email,expires_at,reason,granted_by,created_at)
-                VALUES(?,?,?,?,?)
-                ON CONFLICT(email) DO UPDATE SET expires_at=excluded.expires_at,
-                    reason=excluded.reason,granted_by=excluded.granted_by,
-                    created_at=excluded.created_at
-                """,
-                (email, expires_at, reason, granted_by, created_at),
-            )
-            row = conn.execute(
-                "SELECT * FROM complimentary_grants WHERE email=?", (email,)
-            ).fetchone()
-        return dict(row)
-
-    def list_grants(self) -> List[dict]:
-        with self._lock, self._connect() as conn:
-            rows = conn.execute(
-                "SELECT * FROM complimentary_grants ORDER BY created_at DESC"
-            ).fetchall()
-        return [dict(row) for row in rows]
-
-    def get_grant(self, email: str) -> Optional[dict]:
-        with self._lock, self._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM complimentary_grants WHERE email=?", (email,)
-            ).fetchone()
-        return dict(row) if row else None
-
-    def delete_grant(self, email: str) -> bool:
-        with self._lock, self._connect() as conn:
-            cursor = conn.execute("DELETE FROM complimentary_grants WHERE email=?", (email,))
-        return cursor.rowcount > 0
 
     def create_project(
         self,
@@ -954,76 +914,6 @@ class Database:
             "elapsed_ms": row["elapsed_ms"],
             "created_at": row["created_at"],
         }
-
-    def usage(self, user_id: int, feature: str, day: Optional[str] = None) -> int:
-        day = day or datetime.now(timezone.utc).date().isoformat()
-        with self._lock, self._connect() as conn:
-            row = conn.execute(
-                "SELECT quantity FROM usage_daily WHERE user_id=? AND feature=? AND day=?",
-                (user_id, feature, day),
-            ).fetchone()
-        return int(row["quantity"]) if row else 0
-
-    def add_usage(self, user_id: int, feature: str, quantity: int = 1) -> int:
-        day = datetime.now(timezone.utc).date().isoformat()
-        with self._lock, self._connect() as conn:
-            conn.execute(
-                """
-                INSERT INTO usage_daily(user_id,feature,day,quantity) VALUES(?,?,?,?)
-                ON CONFLICT(user_id,feature,day) DO UPDATE SET
-                    quantity=usage_daily.quantity+excluded.quantity
-                """,
-                (user_id, feature, day, quantity),
-            )
-            row = conn.execute(
-                "SELECT quantity FROM usage_daily WHERE user_id=? AND feature=? AND day=?",
-                (user_id, feature, day),
-            ).fetchone()
-        return int(row["quantity"])
-
-    def update_subscription(
-        self,
-        user_id: Optional[int] = None,
-        customer_id: str = "",
-        subscription_id: str = "",
-        status: str = "none",
-        expires_at: Optional[str] = None,
-    ) -> bool:
-        where = "id=?" if user_id is not None else "stripe_customer_id=?"
-        value: Any = user_id if user_id is not None else customer_id
-        with self._lock, self._connect() as conn:
-            cursor = conn.execute(
-                f"""
-                UPDATE users SET
-                    stripe_customer_id=CASE WHEN ?!='' THEN ? ELSE stripe_customer_id END,
-                    stripe_subscription_id=CASE WHEN ?!='' THEN ? ELSE stripe_subscription_id END,
-                    subscription_status=?,subscription_expires_at=? WHERE {where}
-                """,
-                (
-                    customer_id,
-                    customer_id,
-                    subscription_id,
-                    subscription_id,
-                    status,
-                    expires_at,
-                    value,
-                ),
-            )
-        return cursor.rowcount > 0
-
-    def webhook_seen(self, event_id: str) -> bool:
-        with self._lock, self._connect() as conn:
-            row = conn.execute(
-                "SELECT 1 FROM processed_webhooks WHERE event_id=?", (event_id,)
-            ).fetchone()
-        return row is not None
-
-    def mark_webhook(self, event_id: str) -> None:
-        with self._lock, self._connect() as conn:
-            conn.execute(
-                "INSERT OR IGNORE INTO processed_webhooks(event_id,processed_at) VALUES(?,?)",
-                (event_id, datetime.now(timezone.utc).isoformat()),
-            )
 
     @staticmethod
     def _row_to_library(row: sqlite3.Row) -> LibraryItem:

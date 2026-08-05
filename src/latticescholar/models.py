@@ -268,11 +268,6 @@ class AuthVerifyRequest(AuthEmailRequest):
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
-class AdminGrantRequest(AuthEmailRequest):
-    expires_at: Optional[str] = None
-    reason: str = Field(default="", max_length=500)
-
-
 class IdeaRequest(BaseModel):
     existing_work: str = Field(min_length=20, max_length=30000)
     research_goal: str = Field(default="", max_length=5000)

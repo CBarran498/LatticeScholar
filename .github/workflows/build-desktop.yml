@@ -90,7 +90,9 @@ jobs:
           "$EXE" --no-browser --port 18765 &
           PID=$!
           sleep 8
-          curl -sf http://127.0.0.1:18765/api/health && echo "Smoke test passed" || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
+          curl -sf http://127.0.0.1:18765/api/health || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
+          curl -sf http://127.0.0.1:18765/ | grep -q LatticeScholar || (echo "Static files check failed"; kill $PID 2>/dev/null; exit 1)
+          echo "Smoke test passed"
           kill $PID 2>/dev/null || true
 
       - name: Resolve symlinks (macOS)

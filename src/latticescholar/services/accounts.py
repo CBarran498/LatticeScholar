@@ -162,18 +162,3 @@ class AccountService:
             "role": user["role"],
             "entitlement": self.entitlement(user),
         }
-
-    def check_daily(self, user: Optional[dict], feature: str) -> None:
-        pass
-
-    def record(self, user: Optional[dict], feature: str) -> None:
-        pass
-
-    def require_pro(self, user: Optional[dict], feature_label: str) -> None:
-        pass
-
-    def validate_sources(self, user: Optional[dict], sources: list) -> None:
-        pass
-
-    def check_library(self, user: Optional[dict]) -> None:
-        pass

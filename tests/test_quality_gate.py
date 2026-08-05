@@ -209,10 +209,7 @@ def test_account_roles_and_login(tmp_path, monkeypatch):
     regular = db.get_or_create_user("user@example.edu", 0)
     assert service.entitlement(regular)["plan"] == "user"
     assert service.entitlement(regular)["is_pro"] is True
-    service.check_daily(regular, "search")
-    service.require_pro(regular, "深度分析")
-    service.validate_sources(regular, ["semantic_scholar"])
-    service.check_library(regular)
+    assert service.public_user(regular)["entitlement"]["is_pro"] is True
     assert _parse_time("bad") is None and _parse_time(None) is None
     assert load_or_create_session_secret(config) == load_or_create_session_secret(config)
 

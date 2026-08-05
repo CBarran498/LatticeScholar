@@ -370,13 +370,12 @@
       </section>
 
       <section class="page" id="page-account">
-        <div class="page-intro"><div><span class="step-no">11</span><div><h2>账户与套餐</h2><p>免费版长期可用；需要更多数据源、深度模型与批量能力时再升级。</p></div></div><button id="logout-button" class="btn btn-secondary hidden">退出登录</button></div>
+        <div class="page-intro"><div><span class="step-no">11</span><div><h2>我的账户</h2><p>所有功能对登录用户完全免费开放。</p></div></div><button id="logout-button" class="btn btn-secondary hidden">退出登录</button></div>
         <section class="account-hero panel">
           <div><span class="eyebrow">CURRENT ACCESS</span><h3 id="account-email">开源社区版</h3><p id="account-entitlement">正在加载当前权益…</p></div>
           <div class="plan-medallion"><small>CURRENT PLAN</small><strong id="account-plan">—</strong><span id="account-expiry">长期有效</span></div>
         </section>
         <div class="usage-grid" id="usage-grid"></div>
-        <div class="section-heading account-heading"><div><span>CHOOSE YOUR PATH</span><h2>基础工作免费，高成本能力按需订阅</h2></div><p>付费购买的是托管便利、模型与接口成本，不阻止任何人下载开源代码自行部署。</p></div>
         <div class="pricing-grid" id="pricing-grid"></div>
         <section class="community-callout panel">
           <div><span class="eyebrow">OPEN-SOURCE</span><h3>完全开源，全功能免费</h3><p>LatticeScholar 是 Apache-2.0 开源项目，所有功能对所有用户免费开放。可在自己的电脑或服务器运行全部工作流。</p></div>
@@ -387,17 +386,6 @@
 
       <section class="page" id="page-admin">
         <div class="page-intro"><div><span class="step-no">A</span><div><h2>系统管理</h2><p>对自动发现的政策候选进行人工核验与发布。</p></div></div><span class="local-badge warning">仅管理员可见</span></div>
-        <div class="admin-layout" id="grant-admin-layout">
-          <form id="grant-form" class="panel form-panel sticky-panel">
-            <div><span class="eyebrow">COMPLIMENTARY ACCESS</span><h3>赠送全功能权益</h3><p>可设置永久或限时赠送；相同邮箱再次提交会更新原记录。</p></div>
-            <label class="field"><span>用户邮箱</span><input id="grant-email" type="email" autocomplete="off" required placeholder="researcher@university.edu"></label>
-            <label class="field"><span>到期时间（留空为永久）</span><input id="grant-expiry" type="datetime-local"></label>
-            <label class="field"><span>赠送原因 / 备注</span><textarea id="grant-reason" rows="4" placeholder="例如：早期共创用户、合作课题组、教育公益名额"></textarea></label>
-            <button class="btn btn-primary full" type="submit">确认赠送 Pro 权益</button>
-            <small class="admin-safety">权益与规范化邮箱绑定。用户完成邮箱验证码登录后自动生效。</small>
-          </form>
-          <section class="panel grant-panel"><div class="grant-head"><div><span class="eyebrow">ACTIVE GRANTS</span><h3>已赠送用户</h3></div><strong id="grant-count">0</strong></div><div id="grant-list" class="grant-list empty-state"><span>◎</span><h3>暂无赠送记录</h3><p>在左侧输入用户邮箱创建第一条权益。</p></div></section>
-        </div>
         <section class="panel policy-ops">
           <div class="policy-ops-head"><div><span class="eyebrow">POLICY LIFECYCLE</span><h3>政策发现与人工审核</h3><p>同步只会发现官方站点中的候选条目；管理员核验标题、日期、原文与适用范围后，才会进入用户政策库。</p></div><div class="policy-sync-metrics"><span><b id="policy-pending-count">0</b> 待审核</span><span><b id="policy-approved-count">0</b> 已发布</span></div></div>
           <div class="policy-sync-controls"><label class="field grow"><span>选择一个官方政策源</span><select id="policy-sync-source"><option value="state-council">国务院政策文件库</option></select></label><button id="policy-sync-button" class="btn btn-primary" type="button">立即发现候选</button><small id="policy-sync-note">同步任务尚未运行</small></div>
