@@ -90,12 +90,11 @@ jobs:
           else
             EXE="dist/LatticeScholar/LatticeScholar"
           fi
-          timeout 10 "$EXE" --no-browser --port 18765 &
+          "$EXE" --no-browser --port 18765 &
           PID=$!
-          sleep 6
-          curl -sf http://127.0.0.1:18765/api/health || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
+          sleep 8
+          curl -sf http://127.0.0.1:18765/api/health && echo "Smoke test passed" || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
           kill $PID 2>/dev/null || true
-          echo "Smoke test passed"
 
       - name: Package archive
         shell: bash
