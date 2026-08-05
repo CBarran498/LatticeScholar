@@ -10,16 +10,21 @@
 
 1. 打开 [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases) 页面
 2. 下载对应你电脑平台的压缩包：
-   - **macOS Apple Silicon** (M1/M2/M3/M4)：`LatticeScholar-macos-arm64.tar.gz`
-   - **macOS Intel**：`LatticeScholar-macos-x64.tar.gz`
-   - **Windows**：`LatticeScholar-windows-x64.zip`
-   - **Linux**：`LatticeScholar-linux-x64.tar.gz`
+   - **macOS** (M1/M2/M3/M4 及 Intel)：`LatticeScholar-macos-arm64.tar.gz`
+   - **Windows 10/11** (64 位)：`LatticeScholar-windows-x64.zip`
+   - **Linux x64** (Ubuntu 22.04+/Debian 12+/Fedora 38+)：`LatticeScholar-linux-x64.tar.gz`
 3. 解压后双击 `LatticeScholar`（Windows 上是 `LatticeScholar.exe`）
 4. 浏览器自动打开，即可使用
 
-> macOS 首次打开如果提示"无法验证开发者"：右键点击 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+> **macOS Intel 用户**：下载 ARM64 版本即可，macOS 通过 Rosetta 2 自动翻译运行，无需额外操作。
+>
+> **macOS 首次打开**如果提示"无法验证开发者"：右键点击 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+>
+> **Windows 首次打开**如果提示"Windows 已保护你的电脑"（SmartScreen）：点击"更多信息" → "仍要运行"。建议将文件解压到不含中文和空格的路径（如 `D:\LatticeScholar\`）。
 
 数据保存在用户主目录的 `.latticescholar` 文件夹中（macOS/Linux 为 `~/.latticescholar/`，Windows 为 `C:\Users\你的用户名\.latticescholar\`）。
+
+**桌面版系统要求**：macOS 12+、Windows 10+ (64 位)、Linux x64 (glibc 2.35+)。不满足要求的系统（Windows 7/8、32 位、Linux ARM64 等）请使用下方的"从源码运行"方式，只需 Python 3.9+。
 
 如果桌面版满足你的需求，下面的 Python 安装步骤可以跳过。如果你需要从源码运行、参与开发或使用高级 PDF 引擎，请继续阅读。
 

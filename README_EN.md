@@ -12,12 +12,19 @@ Download the standalone build for your platform from [GitHub Releases](https://g
 
 | Platform | File | Launch |
 |---|---|---|
-| macOS (Apple Silicon) | `LatticeScholar-macos-arm64.tar.gz` | Extract, double-click `LatticeScholar` |
-| macOS (Intel) | `LatticeScholar-macos-x64.tar.gz` | Same as above |
-| Windows | `LatticeScholar-windows-x64.zip` | Extract, double-click `LatticeScholar.exe` |
-| Linux | `LatticeScholar-linux-x64.tar.gz` | Extract, run `./LatticeScholar` |
+| macOS (Apple Silicon M1/M2/M3/M4) | `LatticeScholar-macos-arm64.tar.gz` | Extract, double-click `LatticeScholar` |
+| Windows 10/11 (64-bit) | `LatticeScholar-windows-x64.zip` | Extract, double-click `LatticeScholar.exe` |
+| Linux x64 (Ubuntu 22.04+/Debian 12+) | `LatticeScholar-linux-x64.tar.gz` | Extract, run `./LatticeScholar` |
 
 Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. You will see an email login page on first launch — enter any email and the verification code is displayed directly on the page (no SMTP setup needed for local use). Data is stored in `~/.latticescholar/`.
+
+> **Intel Mac users**: download the ARM64 build — macOS runs it automatically via Rosetta 2.
+>
+> **macOS Gatekeeper**: if blocked, right-click → Open → Confirm, or run `xattr -cr LatticeScholar/` in Terminal.
+>
+> **Windows SmartScreen**: if you see "Windows protected your PC", click "More info" → "Run anyway". Extract to a simple path without spaces or non-ASCII characters.
+>
+> **Unsupported environments** (Windows 7/8, 32-bit, Linux ARM64, older glibc, etc.): install from source with Python 3.9+.
 
 ## From Source (Developers)
 

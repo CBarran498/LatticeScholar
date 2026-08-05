@@ -52,14 +52,19 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 
 | 平台 | 下载文件 | 启动方式 |
 |---|---|---|
-| macOS (Apple Silicon) | `LatticeScholar-macos-arm64.tar.gz` | 解压后双击 `LatticeScholar` |
-| macOS (Intel) | `LatticeScholar-macos-x64.tar.gz` | 同上 |
-| Windows | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
-| Linux | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
+| macOS (Apple Silicon M1/M2/M3/M4) | `LatticeScholar-macos-arm64.tar.gz` | 解压后双击 `LatticeScholar` |
+| Windows 10/11 (64 位) | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
+| Linux x64 (Ubuntu 22.04+/Debian 12+) | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
 
 浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入邮箱后验证码直接显示在页面上，无需额外配置。数据保存在用户主目录的 `.latticescholar` 文件夹中。
 
-> macOS 首次打开如果提示"无法验证开发者"：右键 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+> **macOS Intel 用户**：下载 ARM64 版本即可，macOS 会通过 Rosetta 2 自动翻译运行，无需额外操作。
+>
+> **macOS 首次打开**如果提示"无法验证开发者"：右键 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
+>
+> **Windows** 首次打开如果提示"Windows 已保护你的电脑"（SmartScreen）：点击"更多信息" → "仍要运行"。建议将文件解压到不含中文和空格的路径（如 `D:\LatticeScholar\`）。
+>
+> **桌面版不支持的环境**（Windows 7/8、32 位系统、Linux ARM64、旧版 Linux 等）请使用[从源码启动](#从源码启动开发者与课题组)，只需 Python 3.9+。
 
 完整安装指南见 [本地安装与使用完整指南](docs/LOCAL_SETUP.md)。
 
