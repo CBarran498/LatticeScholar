@@ -7,6 +7,15 @@
 - **桌面版（推荐）**：从 [GitHub Releases](https://github.com/CBarran498/LatticeScholar/releases) 下载对应平台的压缩包，解压后双击 `LatticeScholar`（Windows 上是 `LatticeScholar.exe`），浏览器自动打开，无需安装 Python。
 - **源码运行**：安装 Python 3.9+，执行 `pip install -e .` 后运行 `latticescholar`。详见 [本地安装指南](LOCAL_SETUP.md)。
 
+## 首次登录
+
+启动后浏览器会打开邮箱登录页。输入你的邮箱地址，点击"获取验证码"：
+
+- **本地运行**（未配置 SMTP）：验证码会直接显示在登录页面上，复制输入即可。
+- **托管部署**（已配置 SMTP）：验证码通过邮件发送到你的邮箱。
+
+首次使用的邮箱会自动注册。用 `LATTICE_ADMIN_EMAILS` 中的邮箱登录为管理员（Pro 权益），其他邮箱默认 Free 用户（含 7 天 Pro 试用）。管理员可在"系统管理"中为其他用户赠送 Pro。
+
 ## 最短上手路径
 
 1. 在“科研项目”建立一个课题，写清研究对象、场景、约束和希望验证的关系。

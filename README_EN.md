@@ -17,7 +17,7 @@ Download the standalone build for your platform from [GitHub Releases](https://g
 | Windows | `LatticeScholar-windows-x64.zip` | Extract, double-click `LatticeScholar.exe` |
 | Linux | `LatticeScholar-linux-x64.tar.gz` | Extract, run `./LatticeScholar` |
 
-Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. Data is stored in `~/.latticescholar/`.
+Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. You will see an email login page on first launch — enter any email and the verification code is displayed directly on the page (no SMTP setup needed for local use). Data is stored in `~/.latticescholar/`.
 
 ## From Source (Developers)
 
@@ -28,7 +28,7 @@ pip install -e .
 latticescholar
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765).
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The default auth mode is `accounts` (email login). When SMTP is not configured, verification codes are shown directly on the login page. Set `LATTICE_ADMIN_EMAILS=your@email.edu` to get admin (Pro) access. To disable login entirely, set `LATTICE_AUTH_MODE=open`.
 
 The default `core` PDF engine uses PDFPlumber with a pypdf fallback and keeps the Apache-compatible installation free of implicit AGPL components. It is intended for PDFs with a searchable text layer. An opt-in `advanced-pdf` extra provides PyMuPDF/PyMuPDF4LLM and local OCR routing:
 

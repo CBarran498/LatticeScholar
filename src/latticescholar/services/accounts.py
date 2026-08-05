@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 import os
 import secrets
 import smtplib
@@ -14,6 +15,8 @@ from typing import Any, Dict, Optional
 from ..config import Settings
 from ..db import Database
 from .auth import AccessManager
+
+logger = logging.getLogger(__name__)
 
 
 class AuthenticationError(RuntimeError):
@@ -63,6 +66,17 @@ class AccountService:
         self.admins = {
             email.strip().casefold() for email in config.admin_emails.split(",") if email.strip()
         }
+        if self.enabled:
+            if not self.admins:
+                logger.warning(
+                    "当前为 accounts 模式但未设置 LATTICE_ADMIN_EMAILS。"
+                    "第一个登录的用户不会自动获得管理员权限。"
+                    "建议在 .env 或环境变量中设置 LATTICE_ADMIN_EMAILS=your@email.com"
+                )
+            if config.dev_auth:
+                logger.info(
+                    "SMTP 未配置，已自动启用开发模式：验证码将直接显示在登录页面上"
+                )
 
     @property
     def enabled(self) -> bool:

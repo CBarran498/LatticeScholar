@@ -221,7 +221,7 @@ docker compose down
 | **模型控制台** | 连接和管理 AI 模型服务 |
 | **使用指南** | 内置使用帮助 |
 
-**默认模式为 `open`（开放社区版）**——不需要注册账号，不需要配置任何模型，所有本地能力开箱即用。
+**默认模式为 `accounts`（邮箱登录）**——首次打开会看到邮箱登录页。输入任意邮箱后，验证码会直接显示在页面上（本地未配置 SMTP 时自动启用开发模式），输入验证码即可进入工作台。建议在 `.env` 中设置 `LATTICE_ADMIN_EMAILS=your@email.edu` 以获得管理员（Pro）权益。不需要配置任何模型，所有本地能力开箱即用。
 
 ---
 
@@ -387,7 +387,7 @@ cp .env.example .env
 |---|---|---|
 | `LATTICE_HOST` | 监听地址 | `127.0.0.1` |
 | `LATTICE_PORT` | 监听端口 | `8765` |
-| `LATTICE_AUTH_MODE` | 认证模式（`open`/`accounts`/`shared`） | `open` |
+| `LATTICE_AUTH_MODE` | 认证模式（`accounts`/`open`/`shared`） | `accounts` |
 | `LATTICE_PDF_ENGINE` | PDF 解析引擎（`core`/`pymupdf`） | `core` |
 | `LATTICE_LLM_PROVIDER` | LLM 服务商 | `none` |
 | `LATTICE_ALLOW_REMOTE_LLM` | 是否允许远程模型 | `false` |

@@ -8,12 +8,12 @@
 
 > 开源、证据驱动的科研智能工作台：多平台文献检索、论文解剖、期刊匹配、全行业政策雷达，以及可证伪科研 Idea。
 
-LatticeScholar 面向高校教师、博士后、研究生和科研管理人员。它不以一句“AI 总结”替代科研判断，而是把论文元数据、证据片段、团队已有能力与官方战略信号组织为可核验的工作流。
+LatticeScholar 面向高校教师、博士后、研究生和科研管理人员。它不以一句"AI 总结"替代科研判断，而是把论文元数据、证据片段、团队已有能力与官方战略信号组织为可核验的工作流。
 
 ## 产品原则
 
 - 证据可回溯：保留 DOI、来源、发布日期、原文链接与证据片段；
-- 缺失要明示：不补写数据库或论文没有提供的结论、指标与“创新”；
+- 缺失要明示：不补写数据库或论文没有提供的结论、指标与"创新"；
 - 假设可证伪：Idea 必须包含风险、反证条件和第一轮验证；
 - 轻量优先：不配置 LLM 也能完成检索、去重、缓存、规则分析和结构化 Idea；
 - 合规接入：不绕过付费墙，不自动抓取 Google Scholar 或知网受限内容。
@@ -35,7 +35,7 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 
 ## 开源与收费如何同时成立
 
-项目采用“开源社区版 + 官方托管服务”的开放核心模式：
+项目采用"开源社区版 + 官方托管服务"的开放核心模式：
 
 | 版本 | 费用 | 适合人群 | 权益 |
 |---|---:|---|---|
@@ -57,7 +57,7 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 | Windows | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
 | Linux | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
 
-浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。数据保存在用户主目录的 `.latticescholar` 文件夹中。
+浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入邮箱后验证码直接显示在页面上，无需额外配置。数据保存在用户主目录的 `.latticescholar` 文件夹中。
 
 > macOS 首次打开如果提示"无法验证开发者"：右键 → 打开 → 确认；或在终端执行 `xattr -cr LatticeScholar/`。
 
@@ -76,7 +76,7 @@ pip install -e .
 latticescholar
 ```
 
-打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。默认 `LATTICE_AUTH_MODE=open`，即开源社区版，不需要账号且全部本地能力可用。
+打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页，输入邮箱后验证码会直接显示在页面上（本地未配置 SMTP 时自动启用开发模式）。第一个用 `LATTICE_ADMIN_EMAILS` 中邮箱登录的用户为管理员（Pro 权益），其他用户默认 Free（7 天试用 Pro）。
 
 Windows PowerShell：
 
@@ -87,20 +87,19 @@ pip install -e .
 latticescholar
 ```
 
-## 托管账号、试用和管理员赠权
+## 邮箱登录、试用和管理员赠权
 
-切换到邮箱账号模式：
+默认即为邮箱登录模式（`LATTICE_AUTH_MODE=accounts`）。本地未配置 SMTP 时，验证码会直接显示在登录页（开发模式自动启用），无需手动设置任何环境变量。
+
+建议在 `.env` 中设置管理员邮箱，以获得 Pro 权益和管理功能：
 
 ```bash
-export LATTICE_AUTH_MODE=accounts
-export LATTICE_SESSION_SECRET=replace-with-a-long-random-secret
-export LATTICE_ADMIN_EMAILS=owner@example.edu
-export LATTICE_TRIAL_DAYS=7
-export LATTICE_DEV_AUTH=true
-latticescholar
+LATTICE_ADMIN_EMAILS=owner@example.edu
 ```
 
-`LATTICE_DEV_AUTH=true` 只用于本机演示，验证码会直接显示在登录页。公网环境必须关闭它，并配置 SMTP。管理员用 `LATTICE_ADMIN_EMAILS` 中的邮箱登录后，侧栏会出现“系统管理”，可输入任意规范邮箱并赠送永久或限时 Pro 权益，也可核验自动发现的政策候选。用户完成邮箱验证码登录后自动生效。
+公网部署时需配置 SMTP，验证码将通过真实邮件发送，开发模式自动关闭。管理员用 `LATTICE_ADMIN_EMAILS` 中的邮箱登录后，侧栏会出现"系统管理"，可输入任意规范邮箱并赠送永久或限时 Pro 权益，也可核验自动发现的政策候选。用户完成邮箱验证码登录后自动生效。
+
+如需恢复无登录模式，设置 `LATTICE_AUTH_MODE=open` 即可。
 
 发布 GitHub 仓库后设置 `LATTICE_REPOSITORY_URL=https://github.com/你的账号/latticescholar`，账户页会显示正确的开源仓库入口。
 
@@ -123,7 +122,7 @@ Webhook 地址为 `https://你的域名/api/billing/webhook/stripe`。应用会�
 
 ## 多模型 AI 是可选增强
 
-侧栏“模型控制台”可以直接连接以下服务，无需改代码：
+侧栏"模型控制台"可以直接连接以下服务，无需改代码：
 
 - 国内：DeepSeek、通义千问、智谱 GLM、Kimi、MiniMax、腾讯混元、豆包/火山方舟、百度千帆；
 - 国际：OpenAI、Anthropic Claude、Google Gemini、Mistral、Cohere、xAI Grok；
@@ -165,7 +164,7 @@ export LATTICE_DEEPSEEK_ROUTING=balanced
 latticescholar
 ```
 
-打开侧栏“模型控制台”检查服务端配置并执行最小连接测试。环境变量密钥不写入数据库；网页 BYOK 密钥只以加密密文写入 SQLite，明文不会通过读取接口返回。模型调用只记录模型名、任务、输入/输出/缓存/推理 Token 与耗时，不记录论文正文、研究问题或回答内容。
+打开侧栏"模型控制台"检查服务端配置并执行最小连接测试。环境变量密钥不写入数据库；网页 BYOK 密钥只以加密密文写入 SQLite，明文不会通过读取接口返回。模型调用只记录模型名、任务、输入/输出/缓存/推理 Token 与耗时，不记录论文正文、研究问题或回答内容。
 
 可选参数：
 
@@ -191,9 +190,9 @@ export LATTICE_PDF_ENGINE=pymupdf
 
 `advanced-pdf` 中的 PyMuPDF/PyMuPDF4LLM 采用 AGPL 或 Artifex 商业许可，并非本项目 Apache-2.0 许可的一部分。特别是公网托管、闭源修改或商业使用前，请自行确认当前许可义务或取得商业许可；详见 [第三方许可说明](THIRD_PARTY_NOTICES.md)。
 
-无论原文是中文还是英文，解释、判断和核验提醒都固定使用简体中文。为保持可追溯性，直接证据引文保留论文原始语言并标注页码；这不是“中文输出失败”，而是避免把机器翻译伪装成原文。
+无论原文是中文还是英文，解释、判断和核验提醒都固定使用简体中文。为保持可追溯性，直接证据引文保留论文原始语言并标注页码；这不是"中文输出失败"，而是避免把机器翻译伪装成原文。
 
-结果页只回答四个问题：领域痛点、相对经典工作的改动、实验是否充分、必须回原文深挖之处。每问采用“一句结论 + 分条详答 + 页码位置”，不再重复展示方法、创新、发现和局限长面板；原文引文默认折叠，提交后答案自动切换为全宽阅读。
+结果页只回答四个问题：领域痛点、相对经典工作的改动、实验是否充分、必须回原文深挖之处。每问采用"一句结论 + 分条详答 + 页码位置"，不再重复展示方法、创新、发现和局限长面板；原文引文默认折叠，提交后答案自动切换为全宽阅读。
 
 ## 数据源配置
 
@@ -217,7 +216,7 @@ export LATTICE_POLICY_SYNC_INTERVAL_HOURS=24
 export LATTICE_POLICY_SYNC_SOURCE_IDS=state-council,most,nsfc,moe
 ```
 
-发现结果必须由管理员在“系统管理”中核验后才会发布。也可运行 `python scripts/sync_policies.py --source state-council` 手动同步。完整运行方式、审核清单和 GitHub 更新流程见 [项目更新与政策运营手册](docs/MAINTENANCE.md)。
+发现结果必须由管理员在"系统管理"中核验后才会发布。也可运行 `python scripts/sync_policies.py --source state-council` 手动同步。完整运行方式、审核清单和 GitHub 更新流程见 [项目更新与政策运营手册](docs/MAINTENANCE.md)。
 
 ## 架构
 
