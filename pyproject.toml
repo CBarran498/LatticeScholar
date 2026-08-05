@@ -45,7 +45,7 @@ advanced-pdf = [
 ]
 dev = [
   "pytest>=8,<9",
-  "pytest-asyncio>=0.24,<1",
+  "pytest-asyncio>=0.24,<2",
   "pytest-cov>=5,<7",
   "ruff>=0.8,<1",
   "reportlab>=4,<5",
