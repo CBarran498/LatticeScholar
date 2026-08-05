@@ -52,9 +52,6 @@ jobs:
           - os: macos-latest
             label: macOS-arm64
             asset: LatticeScholar-macos-arm64
-          - os: macos-13
-            label: macOS-x64
-            asset: LatticeScholar-macos-x64
           - os: windows-latest
             label: Windows-x64
             asset: LatticeScholar-windows-x64
