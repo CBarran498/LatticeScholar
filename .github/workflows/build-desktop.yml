@@ -93,6 +93,14 @@ jobs:
           curl -sf http://127.0.0.1:18765/api/health && echo "Smoke test passed" || (echo "Health check failed"; kill $PID 2>/dev/null; exit 1)
           kill $PID 2>/dev/null || true
 
+      - name: Resolve symlinks (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cp -RL dist/LatticeScholar dist/LatticeScholar-resolved
+          rm -rf dist/LatticeScholar
+          mv dist/LatticeScholar-resolved dist/LatticeScholar
+
       - name: Package archive
         shell: bash
         run: |
