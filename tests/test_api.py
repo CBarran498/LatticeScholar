@@ -14,7 +14,7 @@ from tests.test_pdf_parser import make_research_pdf
 
 
 def make_client(tmp_path):
-    config = Settings(data_dir=tmp_path, llm_provider="none")
+    config = Settings(data_dir=tmp_path, llm_provider="none", auth_mode="open")
     return TestClient(create_app(config))
 
 
@@ -155,6 +155,7 @@ def test_private_access_and_bibliography_import(tmp_path):
     config = Settings(
         data_dir=tmp_path,
         llm_provider="none",
+        auth_mode="shared",
         access_password="correct horse battery staple",
         session_secret="test-secret-that-is-long-enough",
     )
@@ -281,7 +282,7 @@ def test_signed_stripe_webhook_activates_subscription_and_is_idempotent(tmp_path
 
 
 def test_project_workspace_records_reproducible_search_and_exports_citations(tmp_path):
-    config = Settings(data_dir=tmp_path, llm_provider="none")
+    config = Settings(data_dir=tmp_path, llm_provider="none", auth_mode="open")
     app = create_app(config)
     with TestClient(app) as client:
         project = client.post(

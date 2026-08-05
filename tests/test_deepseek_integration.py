@@ -239,7 +239,7 @@ def test_llm_usage_metadata_is_aggregated_without_content(tmp_path):
 
 
 def test_model_center_and_research_assistant_api_paths(tmp_path):
-    app = create_app(Settings(data_dir=tmp_path, llm_provider="none"))
+    app = create_app(Settings(data_dir=tmp_path, llm_provider="none", auth_mode="open"))
     with TestClient(app) as client:
         app.state.research_assistant.search_strategy = AsyncMock(
             return_value=SearchStrategyResponse(

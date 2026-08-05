@@ -205,7 +205,7 @@ async def test_provider_failover_and_http_errors(tmp_path, monkeypatch):
 
 def test_model_provider_api_never_returns_plaintext(tmp_path, monkeypatch):
     monkeypatch.setattr(ProviderVault, "_reject_private_resolution", staticmethod(lambda *_: None))
-    app = create_app(Settings(data_dir=tmp_path, llm_provider="none"))
+    app = create_app(Settings(data_dir=tmp_path, llm_provider="none", auth_mode="open"))
     with TestClient(app) as client:
         initial = client.get("/api/model-providers").json()
         assert len(initial["providers"]) >= 15
