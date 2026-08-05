@@ -224,7 +224,6 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
                 "required": True,
                 "authenticated": bool(user),
                 "user": accounts.public_user(user) if user else None,
-                "dev_auth": config.dev_auth,
             }
         authenticated = not access.required or access.valid(
             request.cookies.get(access.cookie_name, "")
@@ -240,13 +239,10 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
         if not accounts.enabled:
             raise HTTPException(status_code=409, detail="当前不是邮箱账号模式")
         try:
-            preview = accounts.request_code(payload.email)
+            accounts.request_code(payload.email)
         except AuthenticationError as exc:
             raise HTTPException(status_code=429, detail=str(exc)) from exc
-        result = {"sent": True, "expires_in": 600}
-        if preview:
-            result["dev_code"] = preview
-        return result
+        return {"sent": True, "expires_in": 600}
 
     @app.post("/api/auth/verify-code")
     async def verify_auth_code(payload: AuthVerifyRequest) -> JSONResponse:

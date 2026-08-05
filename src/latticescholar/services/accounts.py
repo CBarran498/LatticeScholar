@@ -12,6 +12,8 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import httpx
+
 from ..config import Settings
 from ..db import Database
 from .auth import AccessManager
@@ -75,8 +77,12 @@ class AccountService:
                 )
             if config.dev_auth:
                 logger.info(
-                    "SMTP 未配置，已自动启用开发模式：验证码将直接显示在登录页面上"
+                    "开发模式已启用（LATTICE_DEV_AUTH=true）：验证码将记录到本地日志"
                 )
+            elif config.smtp_host:
+                logger.info("邮件发送方式：自定义 SMTP (%s)", config.smtp_host)
+            else:
+                logger.info("邮件发送方式：公共邮件代理 (%s)", config.mail_api_url)
 
     @property
     def enabled(self) -> bool:
@@ -100,7 +106,10 @@ class AccountService:
             with preview.open("a", encoding="utf-8") as handle:
                 handle.write(f"{datetime.now(timezone.utc).isoformat()} {email} {code}\n")
             return code
-        self._send_code(email, code)
+        if self.config.smtp_host:
+            self._send_code(email, code)
+        else:
+            self._send_via_api(email, code)
         return None
 
     def _send_code(self, email: str, code: str) -> None:
@@ -119,6 +128,23 @@ class AccountService:
             if self.config.smtp_username:
                 server.login(self.config.smtp_username, self.config.smtp_password)
             server.send_message(message)
+
+    def _send_via_api(self, email: str, code: str) -> None:
+        url = self.config.mail_api_url.rstrip("/") + "/send"
+        try:
+            resp = httpx.post(
+                url,
+                json={"to": email, "code": code},
+                timeout=15,
+            )
+        except httpx.HTTPError as exc:
+            logger.error("邮件代理请求失败: %s", exc)
+            raise AuthenticationError("邮件发送服务暂时不可用，请稍后再试") from exc
+        if resp.status_code == 429:
+            raise AuthenticationError("验证码发送过于频繁，请稍后再试")
+        if resp.status_code != 200:
+            logger.error("邮件代理返回错误 %d: %s", resp.status_code, resp.text)
+            raise AuthenticationError("验证码邮件发送失败，请稍后再试")
 
     def verify_code(self, email: str, code: str) -> Dict[str, Any]:
         record = self.db.get_auth_code(email)

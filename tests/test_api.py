@@ -180,10 +180,12 @@ def test_private_access_and_bibliography_import(tmp_path):
         assert history[0]["query"] == "题录导入：records.ris"
 
 
-def _email_login(client, email):
+def _email_login(client, email, data_dir=None):
     requested = client.post("/api/auth/request-code", json={"email": email})
     assert requested.status_code == 200
-    code = requested.json()["dev_code"]
+    assert data_dir is not None, "_email_login requires data_dir for dev_auth log"
+    log = (data_dir / "auth-preview.log").read_text(encoding="utf-8")
+    code = [line for line in log.strip().splitlines() if email in line][-1].split()[-1]
     verified = client.post("/api/auth/verify-code", json={"email": email, "code": code})
     assert verified.status_code == 200
     return verified.json()["user"]
@@ -205,7 +207,7 @@ def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
         assert status["mode"] == "accounts"
         assert status["authenticated"] is False
 
-        user = _email_login(client, "researcher@example.edu")
+        user = _email_login(client, "researcher@example.edu", data_dir=tmp_path)
         assert user["entitlement"]["plan"] == "free"
         blocked = client.post(
             "/api/search",
@@ -220,7 +222,7 @@ def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
         assert import_blocked.status_code == 402
 
         client.post("/api/auth/logout")
-        admin = _email_login(client, "admin@example.edu")
+        admin = _email_login(client, "admin@example.edu", data_dir=tmp_path)
         assert admin["role"] == "admin"
         granted = client.post(
             "/api/admin/grants",
@@ -230,7 +232,7 @@ def test_email_accounts_admin_grants_and_feature_gates(tmp_path):
         assert client.get("/api/admin/grants").json()[0]["email"] == "researcher@example.edu"
 
         client.post("/api/auth/logout")
-        user = _email_login(client, "researcher@example.edu")
+        user = _email_login(client, "researcher@example.edu", data_dir=tmp_path)
         assert user["entitlement"]["plan"] == "complimentary"
         assert user["entitlement"]["is_pro"] is True
 
@@ -250,7 +252,7 @@ def test_signed_stripe_webhook_activates_subscription_and_is_idempotent(tmp_path
         stripe_pro_price_id="price_test_pro",
     )
     with TestClient(create_app(config)) as client:
-        user = _email_login(client, "paid@example.edu")
+        user = _email_login(client, "paid@example.edu", data_dir=tmp_path)
         event = {
             "id": "evt_checkout_1",
             "type": "checkout.session.completed",
@@ -368,7 +370,7 @@ def test_admin_policy_review_publishes_dynamic_policy(tmp_path):
         }
     )
     with TestClient(app) as client:
-        _email_login(client, "admin@example.edu")
+        _email_login(client, "admin@example.edu", data_dir=tmp_path)
         candidates = client.get("/api/admin/policy-candidates").json()
         reviewed = client.post(
             f"/api/admin/policy-candidates/{candidates[0]['id']}/review",

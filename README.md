@@ -56,7 +56,7 @@ LatticeScholar 面向高校教师、博士后、研究生和科研管理人员�
 | Windows 10/11 (64 位) | `LatticeScholar-windows-x64.zip` | 解压后双击 `LatticeScholar.exe` |
 | Linux x64 (Ubuntu 22.04+/Debian 12+) | `LatticeScholar-linux-x64.tar.gz` | 解压后运行 `./LatticeScholar` |
 
-浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入邮箱后验证码直接显示在页面上，无需额外配置。数据保存在用户主目录的 `.latticescholar` 文件夹中。
+浏览器会自动打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。首次启动会看到邮箱登录页——输入你的邮箱，6 位验证码会发送到你的邮箱中，无需额外配置。数据保存在用户主目录的 `.latticescholar` 文件夹中。
 
 > **macOS Intel 用户**：下载 ARM64 版本即可，macOS 会通过 Rosetta 2 自动翻译运行，无需额外操作。
 >

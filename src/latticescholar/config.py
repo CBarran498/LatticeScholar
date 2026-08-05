@@ -42,10 +42,11 @@ class Settings:
     session_secret: str = os.getenv("LATTICE_SESSION_SECRET", "")
     secure_cookies: bool = _env_bool("LATTICE_SECURE_COOKIES", False)
     auth_mode: str = os.getenv("LATTICE_AUTH_MODE", "accounts").lower()
-    dev_auth: bool = _env_bool(
-        "LATTICE_DEV_AUTH",
-        default=os.getenv("LATTICE_DEV_AUTH") is None and not os.getenv("LATTICE_SMTP_HOST", "").strip(),
+    mail_api_url: str = os.getenv(
+        "LATTICE_MAIL_API_URL",
+        "https://lattice-mail.latticescholar.workers.dev",
     )
+    dev_auth: bool = _env_bool("LATTICE_DEV_AUTH", False)
     admin_emails: str = os.getenv("LATTICE_ADMIN_EMAILS", "")
     smtp_host: str = os.getenv("LATTICE_SMTP_HOST", "")
     smtp_port: int = int(os.getenv("LATTICE_SMTP_PORT", "587"))

@@ -16,7 +16,7 @@ Download the standalone build for your platform from [GitHub Releases](https://g
 | Windows 10/11 (64-bit) | `LatticeScholar-windows-x64.zip` | Extract, double-click `LatticeScholar.exe` |
 | Linux x64 (Ubuntu 22.04+/Debian 12+) | `LatticeScholar-linux-x64.tar.gz` | Extract, run `./LatticeScholar` |
 
-Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. You will see an email login page on first launch — enter any email and the verification code is displayed directly on the page (no SMTP setup needed for local use). Data is stored in `~/.latticescholar/`.
+Your browser opens [http://127.0.0.1:8765](http://127.0.0.1:8765) automatically. You will see an email login page on first launch — enter your email and a 6-digit verification code will be sent to your inbox. No SMTP setup needed. Data is stored in `~/.latticescholar/`.
 
 > **Intel Mac users**: download the ARM64 build — macOS runs it automatically via Rosetta 2.
 >

@@ -190,7 +190,7 @@ function configureLogin(auth) {
   $("#shared-login-form").classList.toggle("hidden", accounts);
   if (accounts) {
     $("#login-description").textContent = "使用邮箱验证码登录。无需记忆密码，首次登录自动获得免费套餐或试用权益。";
-    $("#login-message").textContent = auth.dev_auth ? "本地演示模式会在页面显示验证码。正式部署请连接邮件服务。" : "验证码 10 分钟有效；登录状态通过 HttpOnly Cookie 安全保存。";
+    $("#login-message").textContent = "验证码将发送到你的邮箱，10 分钟内有效。";
   } else {
     $("#login-description").textContent = "这是受保护的共享科研工作台。请输入访问密码继续。";
     $("#login-message").textContent = "登录会话通过 HttpOnly Cookie 安全保存。";
@@ -507,7 +507,7 @@ async function emailLogin(event) {
     $("#login-code").disabled = false;
     $("#code-target").textContent = email;
     $("#login-code").focus();
-    message.textContent = result.dev_code ? `本地演示验证码：${result.dev_code}` : "验证码已发送，请检查收件箱与垃圾邮件。";
+    message.textContent = "验证码已发送到你的邮箱，请检查收件箱与垃圾邮件。";
   } catch (error) { message.textContent = error.message; }
 }
 
@@ -516,7 +516,7 @@ function resetEmailLogin() {
   $("#code-step").classList.add("hidden");
   $("#login-code").value = "";
   $("#login-code").disabled = true;
-  $("#login-message").textContent = "验证码 10 分钟有效；登录状态通过 HttpOnly Cookie 安全保存。";
+  $("#login-message").textContent = "验证码将发送到你的邮箱，10 分钟内有效。";
 }
 
 function formatExpiry(value) {
