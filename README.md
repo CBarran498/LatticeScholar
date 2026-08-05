@@ -236,6 +236,7 @@ pytest -q
 
 ## 文档
 
+- [本地安装与使用完整指南](docs/LOCAL_SETUP.md)
 - [商业化设计](docs/MONETIZATION.md)
 - [多模型接入与 BYOK 安全指南](docs/MODEL_PROVIDERS.md)
 - [产品分析与路线图](docs/PRODUCT.md)
