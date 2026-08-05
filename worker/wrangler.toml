@@ -4,6 +4,6 @@ compatibility_date = "2024-12-01"
 
 [vars]
 FROM_NAME = "LatticeScholar"
-FROM_EMAIL = "noreply@latticescholar.com"
+FROM_EMAIL = "onboarding@resend.dev"
 
 # RESEND_API_KEY must be set via `wrangler secret put RESEND_API_KEY`

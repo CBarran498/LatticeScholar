@@ -87,7 +87,7 @@ export default {
     }
 
     const fromName = env.FROM_NAME || "LatticeScholar";
-    const fromEmail = env.FROM_EMAIL || "noreply@latticescholar.com";
+    const fromEmail = env.FROM_EMAIL || "onboarding@resend.dev";
 
     const resendPayload = {
       from: `${fromName} <${fromEmail}>`,
