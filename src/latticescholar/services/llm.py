@@ -22,6 +22,97 @@ class LLMUnavailable(RuntimeError):
 
 DEEPSEEK_REASONING_TASKS = {"paper_analysis", "idea", "research_discussion"}
 
+TASK_OUTPUT_TOKENS = {
+    "paper_analysis": 12000,
+    "idea": 8000,
+    "research_discussion": 8000,
+    "query_strategy": 2000,
+    "connection_test": 512,
+}
+
+
+def _repair_truncated_json(text: str) -> str:
+    """Attempt to repair truncated JSON output by closing open brackets/braces."""
+    text = text.strip()
+    if not text:
+        return ""
+    # Strip markdown fences if present
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.I)
+    text = re.sub(r"\s*```$", "", text)
+    # Try parsing as-is first
+    try:
+        json.loads(text)
+        return text
+    except json.JSONDecodeError:
+        pass
+    # Remove any trailing incomplete string value (unmatched quote)
+    # Count unmatched quotes
+    in_string = False
+    escape_next = False
+    last_complete = 0
+    brackets = []
+    for i, ch in enumerate(text):
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"' and not escape_next:
+            in_string = not in_string
+            if not in_string:
+                last_complete = i + 1
+            continue
+        if in_string:
+            continue
+        if ch in '{[':
+            brackets.append(ch)
+            last_complete = i + 1
+        elif ch in '}]':
+            if brackets:
+                brackets.pop()
+            last_complete = i + 1
+        elif ch in ',:\n\r\t ':
+            last_complete = i + 1
+    # If we're inside a string, truncate to last complete position
+    if in_string:
+        text = text[:last_complete]
+    # Remove trailing comma
+    text = re.sub(r",\s*$", "", text)
+    # Close open brackets/braces
+    # Recount brackets after truncation
+    brackets = []
+    in_string = False
+    escape_next = False
+    for ch in text:
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in '{[':
+            brackets.append(ch)
+        elif ch == '}' and brackets and brackets[-1] == '{':
+            brackets.pop()
+        elif ch == ']' and brackets and brackets[-1] == '[':
+            brackets.pop()
+    # Close in reverse order
+    closers = {'[': ']', '{': '}'}
+    for bracket in reversed(brackets):
+        text += closers[bracket]
+    # Validate the repaired JSON
+    try:
+        json.loads(text)
+        return text
+    except json.JSONDecodeError:
+        return ""
+
 
 class LLMService:
     def __init__(self, config: Settings, vault: Optional[ProviderVault] = None):
@@ -68,6 +159,12 @@ class LLMService:
             if task in DEEPSEEK_REASONING_TASKS
             else self.config.deepseek_fast_model
         )
+
+    def output_tokens_for_task(self, task: str) -> int:
+        task_budget = TASK_OUTPUT_TOKENS.get(task)
+        if task_budget:
+            return max(task_budget, self.config.llm_max_output_tokens)
+        return self.config.llm_max_output_tokens
 
     def thinking_for_task(self, task: str, model: str) -> str:
         configured = self.config.deepseek_thinking
@@ -164,9 +261,9 @@ class LLMService:
         if self.config.llm_provider == "deepseek":
             content, usage = await self._deepseek_completion(system, user, task, user_id)
         elif self.config.llm_provider == "ollama":
-            content, usage = await self._ollama_completion(system, user)
+            content, usage = await self._ollama_completion(system, user, task)
         else:
-            content, usage = await self._openai_compatible_completion(system, user)
+            content, usage = await self._openai_compatible_completion(system, user, task)
         usage.update(
             {
                 "task": task,
@@ -203,7 +300,7 @@ class LLMService:
         body: Dict[str, Any] = {
             "model": candidate["model"],
             "stream": False,
-            "max_tokens": self.config.llm_max_output_tokens,
+            "max_tokens": self.output_tokens_for_task(task),
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": system},
@@ -232,9 +329,11 @@ class LLMService:
         payload = response.json()
         choice = (payload.get("choices") or [{}])[0]
         finish_reason = choice.get("finish_reason")
-        if finish_reason in {"length", "max_tokens"}:
-            raise LLMUnavailable("输出达到长度上限，结构化结果可能不完整")
         content = (choice.get("message") or {}).get("content") or ""
+        if finish_reason in {"length", "max_tokens"} and content.strip():
+            content = _repair_truncated_json(content)
+            if not content:
+                raise LLMUnavailable("输出达到长度上限，结构化结果可能不完整")
         if isinstance(content, list):
             content = "".join(str(item.get("text") or "") for item in content if isinstance(item, dict))
         if not str(content).strip():
@@ -342,7 +441,7 @@ class LLMService:
             raise LLMUnavailable(f"{provider_name} 请求失败（HTTP {response.status_code}）")
         return response
 
-    async def _ollama_completion(self, system: str, user: str) -> tuple[str, Dict[str, Any]]:
+    async def _ollama_completion(self, system: str, user: str, task: str = "general") -> tuple[str, Dict[str, Any]]:
         timeout = httpx.Timeout(120.0, connect=8.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
@@ -353,7 +452,7 @@ class LLMService:
                     "format": "json",
                     "options": {
                         "temperature": 0.2,
-                        "num_predict": self.config.llm_max_output_tokens,
+                        "num_predict": self.output_tokens_for_task(task),
                     },
                     "messages": [
                         {"role": "system", "content": system},
@@ -371,7 +470,7 @@ class LLMService:
         }
 
     async def _openai_compatible_completion(
-        self, system: str, user: str
+        self, system: str, user: str, task: str = "general"
     ) -> tuple[str, Dict[str, Any]]:
         headers = {"Content-Type": "application/json"}
         if self.config.llm_api_key:
@@ -391,7 +490,7 @@ class LLMService:
                 json={
                     "model": self.config.llm_model,
                     "temperature": 0.2,
-                    "max_tokens": self.config.llm_max_output_tokens,
+                    "max_tokens": self.output_tokens_for_task(task),
                     "response_format": {"type": "json_object"},
                     "messages": [
                         {"role": "system", "content": system},
@@ -428,7 +527,7 @@ class LLMService:
                 {"role": "user", "content": user},
             ],
             "stream": False,
-            "max_tokens": self.config.llm_max_output_tokens,
+            "max_tokens": self.output_tokens_for_task(task),
             "response_format": {"type": "json_object"},
             "thinking": {"type": thinking},
             "reasoning_effort": effort,
@@ -457,8 +556,7 @@ class LLMService:
                 payload = response.json()
                 choice = (payload.get("choices") or [{}])[0]
                 finish_reason = choice.get("finish_reason")
-                if finish_reason == "length":
-                    raise LLMUnavailable("DeepSeek 输出达到长度上限，JSON 可能不完整")
+
                 if finish_reason == "content_filter":
                     raise LLMUnavailable("DeepSeek 未返回内容：请求触发内容安全限制")
                 if finish_reason == "insufficient_system_resource":
@@ -467,6 +565,14 @@ class LLMService:
                         continue
                     raise LLMUnavailable("DeepSeek 当前资源不足，请稍后重试")
                 content = (choice.get("message") or {}).get("content") or ""
+                if finish_reason == "length" and not content.strip():
+                    raise LLMUnavailable("DeepSeek 输出达到长度上限，JSON 可能不完整")
+                if finish_reason == "length" and content.strip():
+                    repaired = _repair_truncated_json(content)
+                    if repaired:
+                        content = repaired
+                    else:
+                        raise LLMUnavailable("DeepSeek 输出达到长度上限，JSON 可能不完整")
                 if not content.strip():
                     if attempt + 1 < attempts:
                         await asyncio.sleep(0.2)

@@ -80,6 +80,8 @@ QUESTIONS = (
     ("deep_dive", "还有哪些细节需要回看原文深挖溯源？"),
 )
 
+CUSTOM_QUESTION_KEY = "user_focus"
+
 CONCEPT_MARKERS = (
     ("hybrid electric aircraft", "混合动力电动飞机"),
     ("electric aircraft", "电动飞机"),
@@ -353,6 +355,58 @@ def _experiment_assessment(
     return answer, verdict, usable, points
 
 
+def _user_focus_question(
+    question: str,
+    records: Sequence[SentenceRecord],
+    evidence: Sequence[EvidenceItem],
+) -> List[KeyQuestionAnswer]:
+    """Generate a heuristic answer for the user's custom research question."""
+    keywords = re.findall(r"[\w\u4e00-\u9fff]{2,}", question.lower())
+    relevant = []
+    for record in records:
+        lowered = record.text.lower()
+        hits = sum(1 for kw in keywords if kw in lowered)
+        if hits > 0:
+            relevant.append((hits, record))
+    relevant.sort(key=lambda x: -x[0])
+    top_records = [r for _, r in relevant[:6]]
+
+    if top_records:
+        points = []
+        for idx, record in enumerate(top_records):
+            concepts = _concepts(record.text, CONCEPT_MARKERS)
+            title = concepts[0] if concepts else f"相关线索 {idx + 1}"
+            points.append(KeyAnswerPoint(
+                title=title,
+                detail=f"原文在此处涉及您关注的内容（{record.location}）：\u201c" + _short_quote(record.text, 400) + "\u201d",
+                locations=[record.location],
+            ))
+        answer = f"在论文文本中找到 {len(top_records)} 处与您关注问题相关的内容。"
+        verdict = "原文有相关线索"
+    else:
+        points = [KeyAnswerPoint(
+            title="未找到直接相关内容",
+            detail=f"在当前提供的论文文本中，未检测到与「{question}」直接相关的显式论述。建议回看全文或补充材料。",
+            locations=[],
+        )]
+        answer = "当前文本中未检测到与您关注问题直接相关的显式信息。"
+        verdict = "信息不足"
+
+    relevant_evidence = [
+        item for item in evidence
+        if any(kw in item.quote.lower() for kw in keywords)
+    ][:4]
+
+    return [KeyQuestionAnswer(
+        key=CUSTOM_QUESTION_KEY,
+        question=question,
+        answer=answer,
+        verdict=verdict,
+        points=points,
+        evidence=relevant_evidence,
+    )]
+
+
 def _key_questions(
     core: str,
     innovations: Sequence[str],
@@ -361,6 +415,7 @@ def _key_questions(
     evidence: Sequence[EvidenceItem],
     problems_found: bool,
     innovations_found: bool,
+    research_question: str = "",
 ) -> List[KeyQuestionAnswer]:
     experiment_answer, experiment_verdict, experiment_evidence, experiment_points = _experiment_assessment(
         records, evidence
@@ -430,7 +485,7 @@ def _key_questions(
             verdict="建议回看原文", points=deep_points,
             evidence=limitation_evidence,
         ),
-    ]
+    ] + (_user_focus_question(research_question, records, evidence) if research_question else [])
 
 
 def _clean_pdf_text(text: str) -> str:
@@ -583,45 +638,74 @@ class AnalyzerService:
             usage={"source_chars": len(request.abstract), "model_tokens": 0},
         )
         result.key_questions = _key_questions(
-            core, innovations, limitations, records, evidence, bool(problems), bool(innovation_records)
+            core, innovations, limitations, records, evidence, bool(problems), bool(innovation_records),
+            research_question=request.research_question,
         )
         return result
 
     async def _analyze_with_llm(
         self, request: AnalyzeRequest, user_id: str = "", owner_id: int = 0
     ) -> PaperAnalysis:
+        has_custom_q = bool(request.research_question and request.research_question.strip())
+        custom_q = request.research_question.strip() if has_custom_q else ""
+
+        question_list_text = (
+            "key_questions 必须按顺序回答五个问题：\n"
+            "1. pain_points — 痛点\n"
+            "2. innovation_delta — 相对经典工作的创新增量\n"
+            "3. evidence_strength — 实验是否充分\n"
+            "4. deep_dive — 需要回原文深挖之处\n"
+            f"5. user_focus — 针对用户特别关注的问题「{custom_q}」，"
+            "直接从论文中寻找证据来回答用户的关注点，"
+            "如果论文中未涉及则明确说明\'原文未涉及此问题\'。\n"
+        ) if has_custom_q else (
+            "key_questions 必须按顺序回答四问：痛点、相对经典工作的创新增量、实验是否充分、"
+            "需要回原文深挖之处。\n"
+        )
+
+        focus_instruction = (
+            f"\n【重要】用户最关心的问题是：「{custom_q}」\n"
+            "你必须在所有回答中将用户关注点作为分析视角和侧重点。"
+            "在 pain_points、innovation_delta、evidence_strength、deep_dive 的回答中，"
+            "都要优先围绕用户关注的方向展开分析。"
+            "同时在 user_focus 问题中给出针对性的、有证据支撑的完整回答。\n"
+        ) if has_custom_q else ""
+
         system = (
             "你是一位严谨的科研论文审读专家。只能依据用户提供的论文文字作答。\n"
             "硬性规则：1）所有解释、判断、标题和提醒必须使用简体中文；专业名词可保留英文。"
             "2）原文引文必须保持原语言并标注页码或位置，不可把翻译文字伪装成原文。"
-            "3）未披露的信息必须写‘原文未披露’，禁止补写数据、方法、结果、创新或前人工作。"
+            "3）未披露的信息必须写\'原文未披露\'，禁止补写数据、方法、结果、创新或前人工作。"
             "4）评估实验充分性时分别检查样本/数据、基线、消融、统计、外部验证和结论边界。\n"
+            f"{focus_instruction}"
             "仅返回JSON对象，字段为：core_problem:string；methods:string[]；innovations:string[]；"
             "findings:string[]；limitations:string[]；evidence:[{claim,quote,location}]；"
             "confidence:low|medium|high；warnings:string[]；"
             "key_questions:[{key,question,answer,verdict,points:[{title,detail,locations}],evidence}]。\n"
-            "key_questions 必须按顺序回答四问：痛点、相对经典工作的创新增量、实验是否充分、"
-            "需要回原文深挖之处。每问先用 answer 给出一句直接中文结论，再用 3—6 个 points 分条详答。"
+            f"{question_list_text}"
+            "每问先用 answer 给出一句直接中文结论，再用 3—6 个 points 分条详答。"
             "points.title 必须是信息密度高的中文小标题；detail 必须是完整、具体的中文解释；"
             "locations 只填写能够直接支持该条的页码或章节。answer、title、detail 中不得粘贴英文长引文，"
             "英文原句只能放在 evidence.quote。实验问题必须逐项检查数据、基线、消融、统计和外部验证。"
-            "不得输出‘论文将以下内容表述为’等重复模板句。verdict 使用审慎短语，"
+            "不得输出\'论文将以下内容表述为\'等重复模板句。verdict 使用审慎短语，"
             "不得把作者声称写成已经独立证实。"
         )
         budget = max(6000, self.llm.config.llm_max_input_chars - len(request.title) - 1800)
         selected_text, selected = _select_evidence_window(request.abstract, budget)
-        question_hint = (
-            f"\n\n用户特别关注：{request.research_question}" if request.research_question else ""
-        )
-        user = f"论文标题：\n{request.title}\n\n论文内容：\n{selected_text}{question_hint}"
+        user = f"论文标题：\n{request.title}\n\n论文内容：\n{selected_text}"
+        if has_custom_q:
+            user += f"\n\n【用户特别关注的问题】：{custom_q}"
         payload, usage = await self.llm.json_completion(
             system, user, task="paper_analysis", user_id=user_id, owner_id=owner_id
         )
         try:
             evidence = [EvidenceItem.model_validate(item) for item in payload.get("evidence") or []]
             raw_questions = payload.get("key_questions") or []
+            expected_questions = list(QUESTIONS)
+            if has_custom_q:
+                expected_questions.append((CUSTOM_QUESTION_KEY, custom_q))
             key_answers = []
-            for index, (key, question) in enumerate(QUESTIONS):
+            for index, (key, question) in enumerate(expected_questions):
                 item = raw_questions[index] if index < len(raw_questions) and isinstance(raw_questions[index], dict) else {}
                 answer = str(item.get("answer") or "原文未披露，无法可靠判断。")
                 points = [KeyAnswerPoint.model_validate(value) for value in item.get("points") or []]
@@ -654,6 +738,7 @@ class AnalyzerService:
                     "source_chars": len(request.abstract),
                     "selected_chars": len(selected_text),
                     "selection_strategy": "section_evidence_window" if selected else "full_text",
+                    "custom_question": custom_q if has_custom_q else None,
                 },
             )
             if not _has_chinese_explanation(result):
@@ -666,7 +751,7 @@ class AnalyzerService:
                         "简体中文解释",
                         "原文证据独立展示",
                         "结论边界提醒",
-                    ],
+                    ] + (["用户自定义问题已响应"] if has_custom_q else []),
                 }
             )
             return result

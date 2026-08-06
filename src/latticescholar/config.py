@@ -26,7 +26,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "LatticeScholar"
-    app_version: str = "0.9.2"
+    app_version: str = "0.9.3"
     host: str = os.getenv("LATTICE_HOST", "127.0.0.1")
     port: int = int(os.getenv("LATTICE_PORT", "8765"))
     data_dir: Path = Path(os.getenv("LATTICE_DATA_DIR", _DEFAULT_DATA_DIR))
@@ -66,7 +66,7 @@ class Settings:
     llm_api_key: str = os.getenv("LATTICE_LLM_API_KEY", "")
     llm_model: str = os.getenv("LATTICE_LLM_MODEL", "qwen2.5:7b")
     llm_max_input_chars: int = int(os.getenv("LATTICE_LLM_MAX_INPUT_CHARS", "32000"))
-    llm_max_output_tokens: int = int(os.getenv("LATTICE_LLM_MAX_OUTPUT_TOKENS", "4000"))
+    llm_max_output_tokens: int = int(os.getenv("LATTICE_LLM_MAX_OUTPUT_TOKENS", "8000"))
     allow_remote_llm: bool = _env_bool("LATTICE_ALLOW_REMOTE_LLM", False)
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     deepseek_base_url: str = os.getenv(
