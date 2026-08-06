@@ -23,7 +23,7 @@ class LLMUnavailable(RuntimeError):
 DEEPSEEK_REASONING_TASKS = {"paper_analysis", "idea", "research_discussion"}
 
 TASK_OUTPUT_TOKENS = {
-    "paper_analysis": 12000,
+    "paper_analysis": 16000,
     "idea": 8000,
     "research_discussion": 8000,
     "query_strategy": 2000,

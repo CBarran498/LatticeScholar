@@ -78,7 +78,7 @@ class TestRepairTruncatedJson:
 
 class TestTaskOutputTokens:
     def test_paper_analysis_has_high_budget(self):
-        assert TASK_OUTPUT_TOKENS["paper_analysis"] >= 12000
+        assert TASK_OUTPUT_TOKENS["paper_analysis"] >= 16000
 
     def test_connection_test_has_low_budget(self):
         assert TASK_OUTPUT_TOKENS["connection_test"] <= 1024
@@ -86,7 +86,7 @@ class TestTaskOutputTokens:
     def test_output_tokens_for_task_uses_max(self):
         config = Settings(llm_provider="none", llm_max_output_tokens=4000)
         service = LLMService(config)
-        assert service.output_tokens_for_task("paper_analysis") == 12000
+        assert service.output_tokens_for_task("paper_analysis") == 16000
         assert service.output_tokens_for_task("connection_test") == 4000
 
     def test_output_tokens_for_unknown_task_uses_config(self):
@@ -98,8 +98,6 @@ class TestTaskOutputTokens:
         config = Settings(llm_provider="none", llm_max_output_tokens=20000)
         service = LLMService(config)
         assert service.output_tokens_for_task("paper_analysis") == 20000
-
-
 class TestUserFocusQuestion:
     def test_user_focus_finds_relevant_records(self):
         text = (
@@ -194,7 +192,7 @@ class TestLLMServiceDefaults:
     def test_output_tokens_method_exists(self):
         service = LLMService(Settings(llm_provider="none"))
         assert hasattr(service, "output_tokens_for_task")
-        assert service.output_tokens_for_task("paper_analysis") >= 12000
+        assert service.output_tokens_for_task("paper_analysis") >= 16000
         assert service.output_tokens_for_task("idea") >= 8000
         assert service.output_tokens_for_task("research_discussion") >= 8000
 
