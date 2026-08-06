@@ -79,11 +79,72 @@ async function api(path, options = {}) {
   return response.headers.get("content-type")?.includes("application/json") ? response.json() : response.text();
 }
 
+// === Non-blocking Task Manager ===
+const taskManager = {
+  tasks: new Map(),
+  nextId: 1,
+  start(text = "正在处理…", buttonEl = null) {
+    const id = this.nextId++;
+    this.tasks.set(id, { text, buttonEl, startTime: Date.now() });
+    if (buttonEl) {
+      buttonEl.dataset.originalText = buttonEl.textContent;
+      buttonEl.disabled = true;
+      buttonEl.classList.add("task-running");
+      buttonEl.innerHTML = `<span class="btn-spinner"></span>${text}`;
+    }
+    this._updateIndicator();
+    return id;
+  },
+  finish(id, successMessage = null) {
+    const task = this.tasks.get(id);
+    if (task && task.buttonEl) {
+      task.buttonEl.disabled = false;
+      task.buttonEl.classList.remove("task-running");
+      task.buttonEl.textContent = task.buttonEl.dataset.originalText || task.buttonEl.textContent;
+    }
+    if (task && successMessage) {
+      toast(successMessage);
+    } else if (task && this.tasks.size > 1) {
+      toast(`✓ ${task.text.replace(/…$/, "")}完成`);
+    }
+    this.tasks.delete(id);
+    this._updateIndicator();
+  },
+  _updateIndicator() {
+    const indicator = $("#task-indicator");
+    if (!indicator) return;
+    if (this.tasks.size === 0) {
+      indicator.classList.add("hidden");
+      hideProgress();
+    } else {
+      const texts = [...this.tasks.values()].map(t => t.text);
+      indicator.classList.remove("hidden");
+      indicator.querySelector("strong").textContent = texts.length === 1
+        ? texts[0]
+        : `${texts.length} 个任务并行中`;
+      indicator.querySelector("small").textContent = texts.join(" · ");
+      showProgress(60);
+    }
+  }
+};
+
 function loading(show, text = "正在处理…") {
-  $("#loader-text").textContent = text;
-  $("#loader").classList.toggle("hidden", !show);
-  if (show) { showProgress(30); setTimeout(() => showProgress(70), 800); }
-  else hideProgress();
+  // Legacy compatibility: non-blocking version
+  if (show) {
+    const indicator = $("#task-indicator");
+    if (indicator) {
+      indicator.classList.remove("hidden");
+      indicator.querySelector("strong").textContent = text;
+      indicator.querySelector("small").textContent = "可继续使用其他功能";
+    }
+    showProgress(50);
+  } else {
+    if (taskManager.tasks.size === 0) {
+      const indicator = $("#task-indicator");
+      if (indicator) indicator.classList.add("hidden");
+      hideProgress();
+    }
+  }
 }
 
 function toast(message, kind = "ok") {
@@ -437,7 +498,7 @@ function renderPolicyCandidates(items) {
 }
 
 async function syncPolicies() {
-  loading(true, "正在从官方政策源发现候选…");
+  const syncTaskId = taskManager.start("政策源同步中…");
   try {
     const result = await api("/api/admin/policies/sync", {method:"POST", body:JSON.stringify({source_ids:[$("#policy-sync-source").value]})});
     renderPolicySyncStatus(result.status);
@@ -445,7 +506,7 @@ async function syncPolicies() {
     const run = result.runs[0];
     toast(run.status === "ok" ? `发现 ${run.discovered} 条候选，新增或变化 ${run.changed} 条` : `同步未完成：${run.error}`, run.status === "ok" ? "ok" : "error");
   } catch (error) { toast(error.message, "error"); }
-  finally { loading(false); }
+  finally { taskManager.finish(syncTaskId); }
 }
 
 async function reviewPolicyCandidate(event) {
@@ -550,7 +611,7 @@ async function importBibliography(event) {
   form.append("source_name", $("#import-source").value);
   const projectId = Number($("#search-project").value) || null;
   if (projectId) form.append("project_id", String(projectId));
-  loading(true, "正在解析题录并统一去重…");
+  const importTaskId = taskManager.start("题录导入中…");
   try {
     const response = await fetch("/api/import/bibliography", {method:"POST", body:form});
     if (!response.ok) { const body = await response.json(); throw new Error(body.detail || "题录导入失败"); }
@@ -558,7 +619,7 @@ async function importBibliography(event) {
     if (projectId) await loadProjectWorkspace();
     toast(`已导入 ${file.name}`);
   } catch (error) { toast(error.message, "error"); }
-  finally { loading(false); }
+  finally { taskManager.finish(importTaskId); }
 }
 
 function paperKey(paper) { return paper.doi || paper.id; }
@@ -647,13 +708,14 @@ async function submitSearch(event) {
   };
   state.paperFilter = "all";
   $$("#paper-tabs button").forEach(button=>button.classList.toggle("active", button.dataset.paperFilter === "all"));
-  loading(true, "正在检索、去重并检查资料完整度…");
+  const searchBtn = event.target.querySelector("button[type='submit']") || event.submitter;
+  const searchTaskId = taskManager.start("文献检索中…", searchBtn);
   try {
     renderPapers(await api("/api/search", {method:"POST", body:JSON.stringify(body)}));
     if (body.project_id) await loadProjectWorkspace();
   }
   catch (error) { toast(`检索失败：${error.message}`, "error"); }
-  finally { loading(false); }
+  finally { taskManager.finish(searchTaskId); }
 }
 
 function findPaper(key) { return state.papers.find(p => paperKey(p) === key) || state.selectedPapers.get(key); }
@@ -733,7 +795,8 @@ function renderPdfSelection() {
 
 async function submitAnalysis(event) {
   event.preventDefault();
-  loading(true, state.analyzeMode === "pdf" ? "正在本地解析 PDF…" : "正在抽取论文证据…");
+  const submitBtn = event.target.querySelector("button[type='submit']") || event.submitter;
+  const taskId = taskManager.start(state.analyzeMode === "pdf" ? "论文解析中…" : "深度分析中…", submitBtn);
   try {
     let result;
     if (state.analyzeMode === "pdf") {
@@ -770,7 +833,7 @@ async function submitAnalysis(event) {
       $("#analyze-form").scrollIntoView({behavior:"smooth",block:"start"});
     };
   } catch (error) { toast(error.message, "error"); }
-  finally { loading(false); }
+  finally { taskManager.finish(taskId); }
 }
 
 function renderJournals(items) {
@@ -781,9 +844,11 @@ function renderJournals(items) {
 }
 
 async function submitJournals(event) {
-  event.preventDefault(); loading(true,"正在从真实发表样本匹配期刊…");
+  event.preventDefault();
+  const submitBtn = event.target.querySelector("button[type='submit']") || event.submitter;
+  const taskId = taskManager.start("期刊匹配中…", submitBtn);
   try { renderJournals(await api("/api/journals/match",{method:"POST",body:JSON.stringify({title:$("#journal-title").value,abstract:$("#journal-abstract").value,limit:10,papers:state.papers.slice(0,100)})})); }
-  catch(error){toast(error.message,"error")} finally{loading(false)}
+  catch(error){toast(error.message,"error")} finally{taskManager.finish(taskId)}
 }
 
 function renderPolicies(policies) {
@@ -796,9 +861,10 @@ function renderPolicies(policies) {
 }
 
 async function searchPolicies(reset=false) {
-  const query = reset ? "" : $("#policy-query").value.trim(); loading(true,"正在匹配政策信号…");
+  const query = reset ? "" : $("#policy-query").value.trim();
+  const policyTaskId = taskManager.start("政策匹配中…");
   try { const items = await api(`/api/policies?q=${encodeURIComponent(query)}`); if(reset) $("#policy-query").value=""; renderPolicies(items); }
-  catch(error){toast(error.message,"error")} finally{loading(false)}
+  catch(error){toast(error.message,"error")} finally{taskManager.finish(policyTaskId)}
 }
 
 function policyActions(event) {
@@ -839,7 +905,7 @@ async function importIdeaDocuments(fileList) {
   const files = [...fileList].slice(0, remaining);
   if (!files.length) return;
   if (fileList.length > remaining) toast(`本次只导入前 ${remaining} 份材料`, "error");
-  loading(true, `正在解析 ${files.length} 份已有工作…`);
+  const importDocsTaskId = taskManager.start(`解析 ${files.length} 份材料…`);
   let completed = 0;
   try {
     for (const file of files) {
@@ -864,7 +930,7 @@ async function importIdeaDocuments(fileList) {
     if (completed) toast(`已解析 ${completed} 份材料，生成时将自动合并`);
   } finally {
     $("#idea-work-files").value = "";
-    loading(false);
+    taskManager.finish(importDocsTaskId);
   }
 }
 
@@ -881,7 +947,9 @@ async function submitIdeas(event) {
   event.preventDefault(); const existing=combinedExistingWork(); if(existing.text.length<20)return toast("请手动说明已有工作，或上传至少一份可解析材料","error");
   if(existing.truncated)toast("合并后内容较长，本次已按 30,000 字符上限提交；建议移除关联度较低的材料", "error");
   const body={existing_work:existing.text,research_goal:$("#research-goal").value,keywords:$("#idea-keywords").value.split(/[,，]/).map(x=>x.trim()).filter(Boolean),papers:[...state.selectedPapers.values()],policy_ids:[...state.selectedPolicies.keys()],use_llm:$("#idea-use-llm").checked};
-  loading(true,"正在构建证据三角与可证伪假设…"); try{renderIdeas(await api("/api/ideas",{method:"POST",body:JSON.stringify(body)}))}catch(error){toast(error.message,"error")}finally{loading(false)}
+  const ideaBtn = event.target.querySelector("button[type='submit']") || event.submitter;
+  const ideaTaskId = taskManager.start("Idea生成中…", ideaBtn);
+  try{renderIdeas(await api("/api/ideas",{method:"POST",body:JSON.stringify(body)}))}catch(error){toast(error.message,"error")}finally{taskManager.finish(ideaTaskId)}
 }
 
 function usageLine(usage = {}) {
@@ -898,8 +966,7 @@ async function generateSearchStrategy() {
   const query = $("#search-query").value.trim();
   if (query.length < 2) return toast("请先填写中文研究主题", "error");
   const button = $("#generate-search-strategy");
-  button.disabled = true;
-  loading(true, "正在拆解概念并生成双语检索式…");
+  const strategyTaskId = taskManager.start("检索策略生成中…", button);
   try {
     const result = await api("/api/search/strategy", {method:"POST", body:JSON.stringify({
       query,
@@ -916,7 +983,7 @@ async function generateSearchStrategy() {
   } catch (error) {
     toast(error.message, "error");
     if (error.status === 409) go("models");
-  } finally { button.disabled = false; loading(false); }
+  } finally { taskManager.finish(strategyTaskId); }
 }
 
 function renderDiscussionProject() {
@@ -941,7 +1008,8 @@ async function submitDiscussion(event) {
   event.preventDefault();
   const project = currentProject();
   if (!project) return toast("请先建立或选择科研项目", "error");
-  loading(true, "正在核对项目证据并形成研讨结论…");
+  const discussBtn = event.target.querySelector("button[type='submit']") || event.submitter;
+  const discussTaskId = taskManager.start("课题研讨中…", discussBtn);
   try {
     const result = await api("/api/discussions", {method:"POST", body:JSON.stringify({
       project_id: project.id,
@@ -956,7 +1024,7 @@ async function submitDiscussion(event) {
   } catch (error) {
     toast(error.message, "error");
     if (error.status === 409) go("models");
-  } finally { loading(false); }
+  } finally { taskManager.finish(discussTaskId); }
 }
 
 function renderModelStatus(status) {
@@ -1057,13 +1125,13 @@ async function saveProvider(event) {
 }
 
 async function testProvider(id) {
-  loading(true, `正在测试 ${providerById(id)?.name || "模型服务"}…`);
+  const testTaskId = taskManager.start(`测试 ${providerById(id)?.name || "模型服务"}…`);
   try {
     const result = await api(`/api/model-providers/${encodeURIComponent(id)}/test`, {method:"POST", body:"{}"});
     toast(result.ok ? "连接与结构化输出测试通过" : "服务已响应，但结构化结果未通过", result.ok ? "ok" : "error");
     await loadModelStatus(false);
   } catch (error) { toast(error.message, "error"); }
-  finally { loading(false); }
+  finally { taskManager.finish(testTaskId); }
 }
 
 async function deleteProvider() {
@@ -1098,11 +1166,10 @@ async function loadModelStatus(showErrors = true) {
 
 async function testModelConnection() {
   const button = $("#test-llm");
-  button.disabled = true;
-  loading(true, "正在执行最小模型连接测试…");
+  const quickTestTaskId = taskManager.start("模型连接测试…", button);
   try { const result = await api("/api/llm/test", {method:"POST", body:"{}"}); toast(result.ok ? "主路由连接与结构化输出测试通过" : "模型已响应，但返回内容不符合测试约定", result.ok ? "ok" : "error"); await loadModelStatus(); }
   catch (error) { toast(error.message, "error"); }
-  finally { button.disabled = false; loading(false); }
+  finally { taskManager.finish(quickTestTaskId); }
 }
 
 async function loadLibrary(kind="") {
@@ -1148,7 +1215,7 @@ async function exportBibliography(format) {
 }
 
 async function exportBrief(){
-  loading(true,"正在整理 Markdown 研究简报…");try{const policies=[...state.selectedPolicies.values()];const papers=[...state.selectedPapers.values()];const content=await api("/api/export",{method:"POST",body:JSON.stringify({title:currentProject()?.name || "LatticeScholar Research Brief",query:$("#search-query").value,papers,analyses:state.analyses.slice(0,5),ideas:state.ideas,policies})});downloadText(content,"latticescholar-research-brief.md","text/markdown;charset=utf-8");toast("研究简报已导出")}catch(e){toast(e.message,"error")}finally{loading(false)}
+  const exportTaskId = taskManager.start("简报导出中…");try{const policies=[...state.selectedPolicies.values()];const papers=[...state.selectedPapers.values()];const content=await api("/api/export",{method:"POST",body:JSON.stringify({title:currentProject()?.name || "LatticeScholar Research Brief",query:$("#search-query").value,papers,analyses:state.analyses.slice(0,5),ideas:state.ideas,policies})});downloadText(content,"latticescholar-research-brief.md","text/markdown;charset=utf-8");toast("研究简报已导出")}catch(e){toast(e.message,"error")}finally{taskManager.finish(exportTaskId)}
 }
 
 function loadStudentTasks() {

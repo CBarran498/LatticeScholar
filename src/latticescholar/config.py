@@ -26,7 +26,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "LatticeScholar"
-    app_version: str = "0.9.3"
+    app_version: str = "0.9.4"
     host: str = os.getenv("LATTICE_HOST", "127.0.0.1")
     port: int = int(os.getenv("LATTICE_PORT", "8765"))
     data_dir: Path = Path(os.getenv("LATTICE_DATA_DIR", _DEFAULT_DATA_DIR))
