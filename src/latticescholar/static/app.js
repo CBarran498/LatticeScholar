@@ -766,7 +766,17 @@ function analysisHtml(result) {
   const hasUserFocus = (result.key_questions || []).some(item => item.key === "user_focus");
   const questions = (result.key_questions || []).map((item,index)=>{
     const points = item.points?.length ? item.points : [{title:"核心结论",detail:item.answer,locations:[]}];
-    const pointList = points.map((point,pointIndex)=>`<li><span class="answer-point-no">${pointIndex+1}</span><div><strong>${escapeHtml(point.title)}</strong><p>${escapeHtml(point.detail)}</p>${point.locations?.length ? `<div class="answer-locations">${point.locations.map(location=>`<span>${escapeHtml(location)}</span>`).join("")}</div>` : ""}</div></li>`).join("");
+    const pointList = points.map((point,pointIndex)=>{
+      let locs = point.locations || [];
+      if (locs.length > 0 && locs.every(l => l.length <= 1)) {
+        const joined = locs.join("").trim();
+        locs = joined ? joined.split(/[,，;；、]/).map(s=>s.trim()).filter(Boolean) : [];
+        if (!locs.length && joined) locs = [joined];
+      }
+      locs = locs.filter(l => l.length > 1);
+      const locHtml = locs.length ? `<div class="answer-locations">${locs.map(location=>`<span>${escapeHtml(location)}</span>`).join("")}</div>` : "";
+      return `<li><span class="answer-point-no">${pointIndex+1}</span><div><strong>${escapeHtml(point.title)}</strong><p>${escapeHtml(point.detail)}</p>${locHtml}</div></li>`;
+    }).join("");
     const evidence = item.evidence?.length ? `<details class="answer-evidence"><summary>核对原文依据（${item.evidence.length}）</summary>${item.evidence.map(e=>`<blockquote><span>${escapeHtml(e.location || "原文")}</span>${escapeHtml(e.quote)}</blockquote>`).join("")}</details>` : "";
     const isUserFocus = item.key === "user_focus";
     const cardClass = isUserFocus ? "question-card answer-card user-focus-card" : "question-card answer-card";

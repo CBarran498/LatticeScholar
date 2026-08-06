@@ -803,7 +803,7 @@ class AnalyzerService:
                     points.append(KeyAnswerPoint(
                         title=str(p.get("title") or "分析要点"),
                         detail=str(p.get("detail") or ""),
-                        locations=[str(loc) for loc in (p.get("locations") or []) if loc],
+                        locations=self._safe_parse_locations(p.get("locations")),
                     ))
                 except Exception:
                     continue
@@ -843,3 +843,30 @@ class AnalyzerService:
         if isinstance(raw, str):
             return [raw]
         return [f"原文未披露{label}相关信息。"]
+
+    @staticmethod
+    def _safe_parse_locations(raw) -> List[str]:
+        """Parse locations field robustly - handles string, list, or None."""
+        if not raw:
+            return []
+        if isinstance(raw, str):
+            parts = [s.strip() for s in re.split(r"[,，;；、]", raw) if s.strip()]
+            return parts if parts else [raw] if raw.strip() else []
+        if isinstance(raw, list):
+            result = []
+            for item in raw:
+                if not item:
+                    continue
+                if isinstance(item, str) and len(item) > 1:
+                    result.append(item)
+                elif isinstance(item, str) and len(item) == 1:
+                    continue
+                else:
+                    result.append(str(item))
+            if not result and raw:
+                joined = "".join(str(x) for x in raw if x)
+                if joined.strip():
+                    parts = [s.strip() for s in re.split(r"[,，;；、]", joined) if s.strip()]
+                    return parts if parts else [joined]
+            return result
+        return []
