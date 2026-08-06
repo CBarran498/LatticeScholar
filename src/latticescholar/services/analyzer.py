@@ -803,7 +803,7 @@ class AnalyzerService:
                     points.append(KeyAnswerPoint(
                         title=str(p.get("title") or "分析要点"),
                         detail=str(p.get("detail") or ""),
-                        locations=self._safe_parse_locations(p.get("locations")),
+                        locations=AnalyzerService._safe_parse_locations(p.get("locations")),
                     ))
                 except Exception:
                     continue
