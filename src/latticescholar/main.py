@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import Settings, settings
@@ -805,6 +805,10 @@ def create_app(config: Optional[Settings] = None) -> FastAPI:
             media_type=media_type,
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
+
+    @app.get("/", include_in_schema=False)
+    async def serve_index():
+        return FileResponse(str(config.static_dir / "index.html"), media_type="text/html")
 
     app.mount("/", StaticFiles(directory=str(config.static_dir), html=True), name="static")
     return app
