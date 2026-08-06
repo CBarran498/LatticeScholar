@@ -541,6 +541,46 @@ def _select_evidence_window(text: str, budget: int) -> tuple[str, bool]:
     return notice + "\n\n" + "\n\n".join(value for _, value in selected), True
 
 
+
+PAPER_ANALYSIS_SYSTEM_PROMPT = (
+    "你是一位严谨的科研论文审读专家，擅长从论文全文中提取结构化信息并进行深度批判性分析。"
+    "只能依据用户提供的论文文字作答，不得臆造或补充原文没有的内容。"
+    "你的分析必须具有高信息密度、强证据支撑和明确的审慎判断。\n\n"
+    "硬性规则：\n"
+    "1）所有解释、判断、标题和提醒必须使用简体中文；专业名词可保留英文。\n"
+    "2）原文引文保持原语言并标注页码或位置，不可把翻译伪装成原文。\n"
+    "3）未披露的信息写'原文未披露'，禁止补写。\n"
+    "4）评估实验充分性时分别检查：样本量/数据规模、基线对比、消融分析、统计检验、外部验证。\n"
+    "5）每个 point 的 detail 必须引用论文中的具体内容（方法名、数据值、实验设置等）。\n"
+    "6）区分作者的声明（claim）与已验证的结论（verified），verdict 使用审慎短语。\n\n"
+    "返回一个 JSON 对象。根据用户指示决定 key_questions 数组包含 4 或 5 个元素。\n"
+    "标准 4 个问题（必须按顺序）：\n"
+    "1. pain_points — 这篇论文要解决领域内哪些现存痛点？列出具体的技术/理论局限。\n"
+    "2. innovation_delta — 相比过往经典工作，本文方法做出了哪些关键改动与创新？给出对比。\n"
+    "3. evidence_strength — 整套实验是否充分，能够扎实支撑作者的核心结论？逐维度评估。\n"
+    "4. deep_dive — 还有哪些细节需要回看原文深挖溯源？指出可能的遗漏或不清晰之处。\n"
+    "若用户提供了自定义研究问题，则追加第 5 个问题：\n"
+    "5. user_focus — 针对用户具体问题，从论文全文中找到所有相关段落和证据，给出详尽回答。"
+    "必须包含原文中的具体方法描述、数据指标、实验条件或结论依据。\n\n"
+    "每问的字段：key(string), question(string), answer(string 一句中文结论 30-80字), "
+    "verdict(string 审慎短语), points(array of {title,detail,locations}), "
+    "evidence(array of {claim,quote,location})。\n"
+    "每问 3-6 个 points（user_focus 问题给 5-8 个）。"
+    "points.title 用信息密度高的中文短标题（10字以内），"
+    "detail 用完整具体的中文解释（至少 40 字，包含方法/数据/结论的具体细节）。\n"
+    "locations 标注原文段落或页码位置。evidence 引用原文原话作为支撑。\n"
+    "其他顶层字段：core_problem(string 50-150字 核心问题的精确描述), "
+    "methods(string[] 3-5项 每项描述一个关键方法或技术手段), "
+    "innovations(string[] 2-4项 每项对比前人工作说明创新点), "
+    "findings(string[] 3-5项 主要实验发现和量化结果), "
+    "limitations(string[] 2-4项 论文自身承认或可推断的局限), "
+    "evidence([{claim,quote,location}] 3-6条 关键论据的原文引用), "
+    "confidence('low'|'medium'|'high' 基于证据完整性判断), "
+    "warnings(string[] 阅读时需注意的陷阱或需核验的点)。\n"
+    "verdict 不得把作者声称写成已独立证实；对缺乏外部验证的结论标注'待独立验证'。"
+)
+
+
 class AnalyzerService:
     def __init__(self, llm: LLMService):
         self.llm = llm
@@ -649,67 +689,23 @@ class AnalyzerService:
         has_custom_q = bool(request.research_question and request.research_question.strip())
         custom_q = request.research_question.strip() if has_custom_q else ""
 
-        num_questions = 5 if has_custom_q else 4
-        question_list_text = (
-            "key_questions 必须按顺序回答五个问题：\n"
-            "1. pain_points — 这篇论文要解决领域内哪些现存痛点？\n"
-            "2. innovation_delta — 相比过往经典工作，本文方法做出了哪些关键改动与创新？\n"
-            "3. evidence_strength — 整套实验是否充分，能够扎实支撑作者的核心结论？\n"
-            "4. deep_dive — 还有哪些细节需要回看原文深挖溯源？\n"
-            f"5. user_focus — 用户特别关注的问题：「{custom_q}」。"
-            "你必须针对这个具体问题，从论文全文中找到所有相关段落和证据，"
-            "给出详细、具体、有原文依据的完整回答。如果论文中完全未涉及则写\'原文未涉及此问题\'。\n"
-        ) if has_custom_q else (
-            "key_questions 必须按顺序回答四个问题：\n"
-            "1. pain_points — 这篇论文要解决领域内哪些现存痛点？\n"
-            "2. innovation_delta — 相比过往经典工作，本文方法做出了哪些关键改动与创新？\n"
-            "3. evidence_strength — 整套实验是否充分，能够扎实支撑作者的核心结论？\n"
-            "4. deep_dive — 还有哪些细节需要回看原文深挖溯源？\n"
-        )
-
-        focus_instruction = (
-            f"\n【最高优先级指令】用户最关心的研究问题是：「{custom_q}」\n"
-            "你必须将这个问题作为本次分析的核心视角。具体要求：\n"
-            "1. 在 pain_points 中，优先分析与用户问题相关的领域痛点。\n"
-            "2. 在 innovation_delta 中，重点说明论文的创新如何与用户问题相关联。\n"
-            "3. 在 evidence_strength 中，优先评估支撑用户关注方向的证据质量。\n"
-            "4. 在 deep_dive 中，指出用户关注方向上还需要深挖的内容。\n"
-            "5. 在 user_focus 中，给出 5-8 个 points，每个 point 的 detail 必须超过 60 字，"
-            "包含具体的方法描述、数据引用、实验结论或原文定位。"
-            "如果论文内容与用户问题高度相关，务必深入展开所有细节。\n"
-        ) if has_custom_q else ""
-
-        system = (
-            "你是一位严谨的科研论文审读专家，擅长从论文全文中提取结构化信息。"
-            "只能依据用户提供的论文文字作答，不得臆造或补充原文没有的内容。\n"
-            f"{focus_instruction}"
-            "硬性规则：\n"
-            "1）所有解释、判断、标题和提醒必须使用简体中文；专业名词可保留英文。\n"
-            "2）原文引文保持原语言并标注页码或位置，不可把翻译伪装成原文。\n"
-            "3）未披露的信息写\'原文未披露\'，禁止补写。\n"
-            "4）评估实验充分性时分别检查：样本/数据、基线对比、消融分析、统计检验、外部验证。\n\n"
-            f"返回一个 JSON 对象。key_questions 数组必须恰好有 {num_questions} 个元素。\n"
-            f"{question_list_text}"
-            "每问的字段：key(string), question(string), answer(string 一句中文结论), "
-            "verdict(string 审慎短语), points(array of {{title,detail,locations}}), "
-            "evidence(array of {{claim,quote,location}})。\n"
-            "每问 3-6 个 points（user_focus 问题可以给 5-8 个）。"
-            "points.title 用信息密度高的中文短标题，detail 用完整具体的中文解释（至少 40 字）。\n"
-            "其他顶层字段：core_problem(string), methods(string[]), innovations(string[]), "
-            "findings(string[]), limitations(string[]), evidence([{{claim,quote,location}}]), "
-            "confidence(\'low\'|\'medium\'|\'high\'), warnings(string[])。\n"
-            "verdict 使用审慎短语，不得把作者声称写成已独立证实。"
-        )
+        system = PAPER_ANALYSIS_SYSTEM_PROMPT
         budget = max(6000, self.llm.config.llm_max_input_chars - len(request.title) - 2200)
         selected_text, selected = _select_evidence_window(request.abstract, budget)
         user = f"论文标题：\n{request.title}\n\n论文正文内容：\n{selected_text}"
         if has_custom_q:
             user += (
-                f"\n\n===========================\n"
-                f"【用户最关心的问题】：{custom_q}\n"
-                f"===========================\n"
-                "请务必在 user_focus 问题中对上述问题给出详尽回答。"
+                f"\n\n{'='*40}\n"
+                f"【用户自定义研究问题】：{custom_q}\n"
+                f"{'='*40}\n"
+                "本次分析必须包含第 5 个问题 user_focus，key_questions 数组共 5 个元素。\n"
+                "在 user_focus 中，针对上述问题给出 5-8 个 points，每个 detail 超过 60 字，"
+                "包含具体方法描述、数据引用、实验结论或原文定位。\n"
+                "同时在前 4 个问题中优先分析与用户问题相关的内容。\n"
+                "如果论文完全未涉及用户问题，在 user_focus 的 answer 中写'原文未涉及此问题'。"
             )
+        else:
+            user += "\n\n本次分析只需回答 4 个标准问题，key_questions 数组共 4 个元素。"
         payload, usage = await self.llm.json_completion(
             system, user, task="paper_analysis", user_id=user_id, owner_id=owner_id
         )

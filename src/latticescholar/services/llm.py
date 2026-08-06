@@ -217,6 +217,7 @@ class LLMService:
         user_id: Optional[str] = None,
         owner_id: int = 0,
         provider_id: str = "",
+        prefix_messages: Optional[List[Dict[str, str]]] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         candidates = (
             self.vault.candidates(owner_id, task, provider_id)
@@ -259,7 +260,9 @@ class LLMService:
         user = user[: self.config.llm_max_input_chars]
         started = time.perf_counter()
         if self.config.llm_provider == "deepseek":
-            content, usage = await self._deepseek_completion(system, user, task, user_id)
+            content, usage = await self._deepseek_completion(
+                system, user, task, user_id, prefix_messages
+            )
         elif self.config.llm_provider == "ollama":
             content, usage = await self._ollama_completion(system, user, task)
         else:
@@ -320,6 +323,8 @@ class LLMService:
         safe_user_id = re.sub(r"[^a-zA-Z0-9_-]", "_", user_id or "")[:512]
         if safe_user_id and provider_id in {"deepseek", "openai", "qianfan"}:
             body["user"] = safe_user_id
+            if provider_id == "deepseek":
+                body["user_id"] = safe_user_id
         response = await self._post_json(
             endpoint_for(candidate["base_url"], "openai_chat"),
             {"Authorization": "Bearer " + candidate["api_key"]},
@@ -340,13 +345,26 @@ class LLMService:
             raise LLMUnavailable("模型返回了空内容", retryable=True)
         raw_usage = payload.get("usage") or {}
         details = raw_usage.get("completion_tokens_details") or raw_usage.get("output_tokens_details") or {}
+        prompt_details = raw_usage.get("prompt_tokens_details") or {}
+        cache_hit = (
+            raw_usage.get("prompt_cache_hit_tokens")
+            or prompt_details.get("cached_tokens")
+            or 0
+        )
+        cache_miss = raw_usage.get("prompt_cache_miss_tokens", 0)
+        total_prompt = raw_usage.get("prompt_tokens") or raw_usage.get("input_tokens") or 0
+        if not cache_miss and total_prompt:
+            cache_miss = total_prompt - cache_hit
+        cache_rate = round(cache_hit / (cache_hit + cache_miss), 3) if (cache_hit + cache_miss) > 0 else 0.0
         usage = {
             **raw_usage,
             "provider": provider_id,
             "model": payload.get("model") or candidate["model"],
             "input_tokens": raw_usage.get("prompt_tokens") or raw_usage.get("input_tokens"),
             "output_tokens": raw_usage.get("completion_tokens") or raw_usage.get("output_tokens"),
-            "cache_hit_tokens": (raw_usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0),
+            "cache_hit_tokens": cache_hit,
+            "cache_miss_tokens": cache_miss,
+            "cache_hit_rate": cache_rate,
             "reasoning_tokens": details.get("reasoning_tokens", 0),
         }
         return str(content), usage
@@ -508,7 +526,12 @@ class LLMService:
         return content, usage
 
     async def _deepseek_completion(
-        self, system: str, user: str, task: str, user_id: Optional[str]
+        self,
+        system: str,
+        user: str,
+        task: str,
+        user_id: Optional[str],
+        prefix_messages: Optional[List[Dict[str, str]]] = None,
     ) -> tuple[str, Dict[str, Any]]:
         model = self.model_for_task(task)
         thinking = self.thinking_for_task(task, model)
@@ -520,12 +543,13 @@ class LLMService:
             endpoint += "/chat/completions"
         key = self.config.deepseek_api_key or self.config.llm_api_key
         headers = {"Content-Type": "application/json", "Authorization": "Bearer " + key}
+        messages: List[Dict[str, str]] = [{"role": "system", "content": system}]
+        if prefix_messages:
+            messages.extend(prefix_messages)
+        messages.append({"role": "user", "content": user})
         request_body: Dict[str, Any] = {
             "model": model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
+            "messages": messages,
             "stream": False,
             "max_tokens": self.output_tokens_for_task(task),
             "response_format": {"type": "json_object"},
@@ -580,12 +604,17 @@ class LLMService:
                     raise LLMUnavailable("DeepSeek 返回了空内容，请重试或调整提示")
                 raw_usage = payload.get("usage") or {}
                 details = raw_usage.get("completion_tokens_details") or {}
+                cache_hit = raw_usage.get("prompt_cache_hit_tokens", 0)
+                cache_miss = raw_usage.get("prompt_cache_miss_tokens", 0)
+                total_input = cache_hit + cache_miss
+                cache_rate = round(cache_hit / total_input, 3) if total_input > 0 else 0.0
                 usage = {
                     **raw_usage,
                     "input_tokens": raw_usage.get("prompt_tokens"),
                     "output_tokens": raw_usage.get("completion_tokens"),
-                    "cache_hit_tokens": raw_usage.get("prompt_cache_hit_tokens", 0),
-                    "cache_miss_tokens": raw_usage.get("prompt_cache_miss_tokens", 0),
+                    "cache_hit_tokens": cache_hit,
+                    "cache_miss_tokens": cache_miss,
+                    "cache_hit_rate": cache_rate,
                     "reasoning_tokens": details.get("reasoning_tokens", 0),
                     "provider": "deepseek",
                     "model": payload.get("model") or model,

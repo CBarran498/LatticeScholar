@@ -1,4 +1,4 @@
-"""Tests for v0.9.4 enhancements: user custom questions, token budget, and concurrency."""
+"""Tests for v0.9.5 enhancements: cache optimization, prompt quality, and concurrency."""
 
 import json
 
@@ -180,7 +180,7 @@ class TestLLMServiceDefaults:
 
     def test_version_updated(self):
         config = Settings()
-        assert config.app_version == "0.9.4"
+        assert config.app_version == "0.9.5"
 
     def test_task_output_tokens_keys(self):
         assert "paper_analysis" in TASK_OUTPUT_TOKENS

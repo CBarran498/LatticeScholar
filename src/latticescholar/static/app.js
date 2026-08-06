@@ -956,10 +956,11 @@ function usageLine(usage = {}) {
   const input = Number(usage.input_tokens || 0).toLocaleString();
   const output = Number(usage.output_tokens || 0).toLocaleString();
   const cache = Number(usage.cache_hit_tokens || 0).toLocaleString();
+  const cacheRate = usage.cache_hit_rate != null ? ` (${Math.round(usage.cache_hit_rate * 100)}%)` : "";
   const provider = usage.provider ? `${escapeHtml(usage.provider)} / ` : "";
   const fallback = usage.fallback_used ? " · 已使用备用路由" : "";
   const checked = usage.quality_status === "passed" ? " · 质量门已通过" : "";
-  return `${provider}${escapeHtml(usage.model || "模型")} · 输入 ${input} · 输出 ${output} · 缓存命中 ${cache} Token${fallback}${checked}`;
+  return `${provider}${escapeHtml(usage.model || "模型")} · 输入 ${input} · 输出 ${output} · 缓存 ${cache}${cacheRate}${fallback}${checked}`;
 }
 
 async function generateSearchStrategy() {
