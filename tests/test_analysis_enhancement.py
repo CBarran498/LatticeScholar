@@ -7,11 +7,11 @@ import pytest
 from latticescholar.config import Settings
 from latticescholar.models import AnalyzeRequest
 from latticescholar.services.analyzer import (
+    AnalyzerService,
     CUSTOM_QUESTION_KEY,
     QUESTIONS,
-    AnalyzerService,
-    _user_focus_question,
     _sentence_records,
+    _user_focus_question,
 )
 from latticescholar.services.llm import (
     LLMService,
